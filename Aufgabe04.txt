@@ -1,0 +1,10 @@
+Da die Bitfolge nicht mit der üblichen Kodierung einer Bitfolge übereinstimmt
+(vgl. https://de.wikipedia.org/wiki/Manchester-Code), vermute ich, dass dies bereits eine enkodierte Nachricht ist.
+Dies ist daran zu erkennen, dass bei einer normalen Kodierung der Bitfolge die Linie nicht während eines Intervalls wechselt.
+
+Davon ausgehend dekodiere ich die Nachricht nun basierend auf IEEE 802.3:
+011??0?
+
+=> wechselt die Linie innerhalb eines Intervalls von oben nach unten, entspricht dies einer 0
+=> wechselt die Linie innerhalb eines Intervalls von unten nach oben, entspricht dies einer 1
+=> da innerhalb von drei Intervallen die Linie sich nicht ändert, ist es nicht möglich, den Wert zu bestimmen
