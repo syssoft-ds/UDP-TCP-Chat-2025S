@@ -8,3 +8,11 @@ Davon ausgehend dekodiere ich die Nachricht nun basierend auf IEEE 802.3:
 => wechselt die Linie innerhalb eines Intervalls von oben nach unten, entspricht dies einer 0
 => wechselt die Linie innerhalb eines Intervalls von unten nach oben, entspricht dies einer 1
 => da innerhalb von drei Intervallen die Linie sich nicht ändert, ist es nicht möglich, den Wert zu bestimmen
+
+Als Zeichung:
+
+Takt:           1 2 3 4 5 6 7
+Signal (1er):     _ _ ? ?   ?
+Signal (0er):   _|    ? ? _ ?
+
+Bits:           0 1 1 ? ? 0 ?
