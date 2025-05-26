@@ -22,11 +22,12 @@ empfangen kann, die von Clients gesendet wird.
 # Aufgabe 2
 
 Das Java-UDP-Programm wurde zu einem Chatprogramm erweitert -> siehe UDP_Chat.java
+Mit dem Programm-Argument `<Name des Clients> <Port>` wird der Client gestartet. 
 Mit dem Befehl `connect <ip> <port> (optional: <name>)` kann man sich bei einer anderen Instanz registrieren.
 Anschließend kann man mit `send <name> <message>` Nachrichten an andere Instanzen senden.
 
 Der Connect Befehl sendet ein Paket an die angegebene IP-Adresse und Port-Nummer, welches die eigene IP-Adresse und Port-Nummer enthält.
-Wenn man den Namen des Gegenüber sofort mit angibt, wird dieser in der Kontaktliste gespeichert. Ansonsten muss der
+Wenn man den Namen des Gegenüber sofort mit angibt ((optional: <name>)), wird dieser in der Kontaktliste gespeichert. Ansonsten muss der
 Gegenüber erst einen connect Befehl senden, damit der Kontakt in der Kontaktliste gespeichert wird.
 
 Bsp. Konversation:
