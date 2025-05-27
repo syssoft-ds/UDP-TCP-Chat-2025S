@@ -1,0 +1,50 @@
+
+Auf1
+
+Python Programme
+
+Nutzung und output:
+    Die beiden Pythonprogramme starten einen server mit den argumenten "-l <port>" und einen client mir den argumenten "<ip> <port>". daraufhin werden alle zeilen, die im client eingegeben werden als nachricht an den server gesendet und dort zusammen mit den daten des clients ausgegeben.
+Funktionsweise:
+    UDP:
+        Server: 
+            erstellt einen socket und erwartet eingehende nachrichten um diese dann auszugeben.
+        Client:
+            verbindet sich mit dem socket des servers und sendet eingegebene nachrichten an das ziel
+        packettraffic:
+            beim aufbau einer verbindung:
+            senden einer nachricht:
+                Client -> Server:nur die nachricht
+            beim schließen einer verbindung
+                Client -> Server:nur die nachricht stop
+        Im Capture "UDPPackets.pcapng" werden diese Packete gezeigt 
+    TCP:
+        Server:
+            hier wird jedem client ein eigener thread mit listener zugewiesen
+        Client:
+            wie bei udp nur ist hier die verbindung etwas umfangreicher um tcp zu erfüllen.
+        packettraffic:
+            beim aufbau einer verbindung:
+                Client -> Server:SYN
+                Server -> Client:SYN,ACK
+                Client -> Server:ACK
+            senden einer nachricht:
+                Client -> Server:PSH,ACK, mit nachricht inhalt
+                Server -> Client:ACK
+            beim schließen einer verbindung
+                Client -> Server:PSH,ACK
+                Server -> Client:ACK
+                Client -> Server:FIN,ACK
+                Server -> Client:ACK
+                Server -> Client:FIN,ACK
+                Client -> Server:ACK
+        Im Capture "TCPPackets.pcapng" werden diese Packete gezeigt 
+
+Auf2
+in der datei nc_udp_chat.py
+
+Auf3
+in der datei nc_tcp_chat.py
+
+Auf4 
+in der Datei Manchester.png
