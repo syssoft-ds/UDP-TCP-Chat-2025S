@@ -8,7 +8,7 @@ import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.HashMap;
 
-public class Main {
+public class udp_chat {
 
     private static final int packetSize = 4096;
 
@@ -22,7 +22,6 @@ public class Main {
     private static HashMap<String, InetSocketAddress> registeredUsers = new HashMap<>();
     private static HashMap<String, String> registeredAddresses = new HashMap<>();
 
-    private BufferedReader br = null;
     private static boolean END_CHAT_FLAG = false;
 
 
@@ -122,6 +121,8 @@ public class Main {
             // add meaningful exception handling
 
         } finally{
+
+            input.close();
             socket.close();
         }
 

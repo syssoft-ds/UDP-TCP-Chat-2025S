@@ -12,7 +12,7 @@ import java.net.ConnectException;
 import java.net.UnknownHostException;
 import java.util.HashMap;
 
-public class Main {
+public class tcp_chat {
 
     private static HashMap<String, PrintWriter> registeredUsers = new HashMap<>();
 
@@ -392,7 +392,7 @@ public class Main {
 
     static class MalformedInputException extends IOException{
 
-        // This exception is thrown if a user's input does not contain any know command
+        // This exception is thrown if a user's input does not contain any known command
 
         public MalformedInputException(String message){
             super(message);
