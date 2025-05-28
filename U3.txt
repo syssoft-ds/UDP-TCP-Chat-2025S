@@ -1,0 +1,15 @@
+Aufgabe 1:
+Ich habe zwei einfache Java-Programme zur Nachrichtenübertragung über UDP und TCP implementiert und ausprobiert. Mithilfe
+von Wireshark habe ich den Netzwerkverkehr aufgezeichnet und analysiert.
+
+Bei UDP konnte ich jede gesendete Nachricht als einzelnes Paket sehen, der Text war direkt im Klartext lesbar. Da
+UDP verbindungslos ist, gab es keinen Verbindungsaufbau – jedes Paket wurde unabhängig gesendet.
+
+Bei TCP war zuerst ein Verbindungsaufbau durch den Drei-Wege-Handshake sichtbar. Die Nachrichten waren nicht sofort lesbar,
+sondern mussten über „Follow TCP Stream“ zusammengesetzt werden. TCP überträgt die Daten als zusammenhängenden Stream und
+sorgt dafür, dass alles zuverlässig und in der richtigen Reihenfolge ankommt.
+
+Aufgabe 4:
+Manchester-Code nach IEEE 802.3
+Bitmuster (beim Flankenwechsel):    1  0  0  0  1  1  1
+Manchstercode:                      01 10 10 10 01 01 01
