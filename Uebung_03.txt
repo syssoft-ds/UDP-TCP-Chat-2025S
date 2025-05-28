@@ -1,0 +1,22 @@
+Aufgabe 1
+
+TCP stellt eine Verbindung via 3-Way-Handshake her. Bei den verschickten Paketen fällt auf Wireshark auf, dass der Listener bei jeder empfangenden Nachricht eine Antwort an den Sender verschickt. Im Vergleich zu UDP ist TCP entsprechend sicherer, Pakete gehen nicht verloren und kommen in der richtigen Reihenfolge an. Außerdem können pro Paket Daten mit einer Größe von mehreren KB versendet werden können. Die Daten können dabei aufgeteilt und beim Empfänger wieder zusammengesetzt werden.
+
+Bei UDP wird keine feste Verbindung vor dem entsenden der Daten abgeschickt. Das führt unter anderem dazu, dass Pakete verloren gehen oder in der falschen Reihenfolge versendet werden können. Ebenfalls soll UDP eine Obergröße Für Daten haben und bei Überschreitung dieser Größe die Daten fragmentieren. Bei unserer Implementierung ist das bei 4096 Bytes, was für UDP wohl recht groß ist.
+
+Aufgabe 2
+
+Siehe die (starken) Änderungen am Code. Um einen Listener zu starten, muss man als weiteren Parameter nun als erstes Argument den Namen eingeben, also "java Main.java <Name> -l <Port>". Zwei Listener können sich nun gegenseiteig als Kontakt hinzufügen mit dem Befehl "register <Name> <IP> <Port>" mit Name, IP und Port des anderen Gesprächsteilnehmers mit dem Befehl "Send <Name> <Nachricht>" kann man der anderen Person Nachrichten schicken.
+
+Aufgabe 3
+
+Siehe Code. Server und Clienten werden unterschiedlich gestartet. Server werden mit "java Main -l <Portnummer>" gestartet, Clients mit "java Main <IP> <Portnummer>". clients müssen sich dann mit "register <Name>" registrieren und können dann wie oben Nachrichten senden.
+
+Aufgabe 4
+
+      Clock: |¯|_|¯|_|¯|_|¯|_|¯|_|¯|_|¯|_|
+      Data:  ¯¯|___|¯|_|¯|___|¯¯¯¯¯|_|¯¯¯¯
+      Bits:    0   1   1   0  1   0  1
+Manchester:  ¯¯|___|¯|_|¯|___|¯¯|____|¯¯¯¯
+
+Codedefinition nach IEEE 802.3
