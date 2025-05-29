@@ -1,0 +1,64 @@
+Die beiden Programme implementieren die Client-Server-Kommunikation, und zwar über TCP (Transmission Control Protocol) und über UDP (User Datagram Protocol). 
+So kann man die Nachrichten zwischen Rechnern schicken und empfangfen. 
+Das TCP-Programm baut eine feste Verbindung zwischen Client und Server auf. Der Client liest die Eingaben aus Terminal ein und sendet sie an Server. Der Server empfängt die Nachrichten und zeigt sie an. Die Kommunikation erfolgt zuverlässig und geordnet, bis der Befehl stop gesendet wird.
+Das UDP-Programm arbeitet verbindungslos. Der Client sendet die Nachricht als Datagramm an den Server. Der Server empfängt das Paket, liest die Bytes aus und gibt den Text aus. 
+
+Aufzeichnung des UDP-Programms: filter udp
+1387	44.446141	192.168.0.140	192.168.0.140	UDP	38	52438 → 1234 Len=6  Data: 48616c6c6f21 Hallo!
+2367	85.248286	192.168.0.140	192.168.0.140	UDP	51	52438 → 1234 Len=19 Data: 4869657220697374205544502050616b65742e Hier ist UDP Paket.
+2612	97.656734	192.168.0.140	192.168.0.140	UDP	37	52438 → 1234 Len=5  Data: 4368616f21 Chao!
+2789	100.906422	192.168.0.140	192.168.0.140	UDP	36	52438 → 1234 Len=4  Data: 73746f70 stop
+
+Aufzeichnung des TCP-Programms: filter tcp.port == 12345
+1008	38.273033	127.0.0.1	127.0.0.1	TCP	56	49453 → 12345 [SYN] Seq=0 Win=65535 Len=0 MSS=65495 WS=256 SACK_PERM
+1009	38.273045	127.0.0.1	127.0.0.1	TCP	44	12345 → 49453 [RST, ACK] Seq=1 Ack=1 Win=0 Len=0
+1022	38.782788	127.0.0.1	127.0.0.1	TCP	56	[TCP Port numbers reused] 49453 → 12345 [SYN] Seq=0 Win=65535 Len=0 MSS=65495 WS=256 SACK_PERM
+1023	38.782811	127.0.0.1	127.0.0.1	TCP	44	12345 → 49453 [RST, ACK] Seq=1 Ack=1 Win=0 Len=0
+1060	39.294940	127.0.0.1	127.0.0.1	TCP	56	[TCP Port numbers reused] 49453 → 12345 [SYN] Seq=0 Win=65535 Len=0 MSS=65495 WS=256 SACK_PERM
+1061	39.294958	127.0.0.1	127.0.0.1	TCP	44	12345 → 49453 [RST, ACK] Seq=1 Ack=1 Win=0 Len=0
+1066	39.806052	127.0.0.1	127.0.0.1	TCP	56	[TCP Port numbers reused] 49453 → 12345 [SYN] Seq=0 Win=65535 Len=0 MSS=65495 WS=256 SACK_PERM
+1067	39.806085	127.0.0.1	127.0.0.1	TCP	44	12345 → 49453 [RST, ACK] Seq=1 Ack=1 Win=0 Len=0
+1068	40.317940	127.0.0.1	127.0.0.1	TCP	56	[TCP Port numbers reused] 49453 → 12345 [SYN] Seq=0 Win=65535 Len=0 MSS=65495 WS=256 SACK_PERM
+1069	40.317966	127.0.0.1	127.0.0.1	TCP	44	12345 → 49453 [RST, ACK] Seq=1 Ack=1 Win=0 Len=0
+1569	63.103950	127.0.0.1	127.0.0.1	TCP	56	49489 → 12345 [SYN] Seq=0 Win=65535 Len=0 MSS=65495 WS=256 SACK_PERM
+1570	63.104018	127.0.0.1	127.0.0.1	TCP	56	12345 → 49489 [SYN, ACK] Seq=0 Ack=1 Win=65535 Len=0 MSS=65495 WS=256 SACK_PERM
+1571	63.104040	127.0.0.1	127.0.0.1	TCP	44	49489 → 12345 [ACK] Seq=1 Ack=1 Win=2619648 Len=0
+2291	85.425875	127.0.0.1	127.0.0.1	TCP	51	49489 → 12345 [PSH, ACK] Seq=1 Ack=1 Win=2619648 Len=7
+2292	85.425912	127.0.0.1	127.0.0.1	TCP	44	12345 → 49489 [ACK] Seq=1 Ack=8 Win=2619648 Len=0
+2577	100.609162	127.0.0.1	127.0.0.1	TCP	65	49489 → 12345 [PSH, ACK] Seq=8 Ack=1 Win=2619648 Len=21
+2578	100.609200	127.0.0.1	127.0.0.1	TCP	44	12345 → 49489 [ACK] Seq=1 Ack=29 Win=2619648 Len=0
+2774	104.790334	127.0.0.1	127.0.0.1	TCP	51	49489 → 12345 [PSH, ACK] Seq=29 Ack=1 Win=2619648 Len=7
+2775	104.790372	127.0.0.1	127.0.0.1	TCP	44	12345 → 49489 [ACK] Seq=1 Ack=36 Win=2619648 Len=0
+2964	108.288846	127.0.0.1	127.0.0.1	TCP	50	49489 → 12345 [PSH, ACK] Seq=36 Ack=1 Win=2619648 Len=6
+2965	108.288883	127.0.0.1	127.0.0.1	TCP	44	12345 → 49489 [ACK] Seq=1 Ack=42 Win=2619648 Len=0
+2966	108.289007	127.0.0.1	127.0.0.1	TCP	44	49489 → 12345 [FIN, ACK] Seq=42 Ack=1 Win=2619648 Len=0
+2967	108.289037	127.0.0.1	127.0.0.1	TCP	44	12345 → 49489 [ACK] Seq=1 Ack=43 Win=2619648 Len=0
+2968	108.289316	127.0.0.1	127.0.0.1	TCP	44	12345 → 49489 [FIN, ACK] Seq=1 Ack=43 Win=2619648 Len=0
+2969	108.289331	127.0.0.1	127.0.0.1	TCP	44	49489 → 12345 [ACK] Seq=43 Ack=2 Win=2619648 Len=0
+3079	116.477371	127.0.0.1	127.0.0.1	TCP	56	49568 → 12345 [SYN] Seq=0 Win=65535 Len=0 MSS=65495 WS=256 SACK_PERM
+3080	116.477416	127.0.0.1	127.0.0.1	TCP	56	12345 → 49568 [SYN, ACK] Seq=0 Ack=1 Win=65535 Len=0 MSS=65495 WS=256 SACK_PERM
+3081	116.477439	127.0.0.1	127.0.0.1	TCP	44	49568 → 12345 [ACK] Seq=1 Ack=1 Win=2619648 Len=0
+3104	120.756156	127.0.0.1	127.0.0.1	TCP	49	49568 → 12345 [PSH, ACK] Seq=1 Ack=1 Win=2619648 Len=5
+3105	120.756185	127.0.0.1	127.0.0.1	TCP	44	12345 → 49568 [ACK] Seq=1 Ack=6 Win=2619648 Len=0
+3524	129.703925	127.0.0.1	127.0.0.1	TCP	59	49568 → 12345 [PSH, ACK] Seq=6 Ack=1 Win=2619648 Len=15
+3525	129.703949	127.0.0.1	127.0.0.1	TCP	44	12345 → 49568 [ACK] Seq=1 Ack=21 Win=2619648 Len=0
+4456	167.484970	127.0.0.1	127.0.0.1	TCP	50	49568 → 12345 [PSH, ACK] Seq=21 Ack=1 Win=2619648 Len=6
+4457	167.485002	127.0.0.1	127.0.0.1	TCP	44	12345 → 49568 [ACK] Seq=1 Ack=27 Win=2619648 Len=0
+4462	170.822053	127.0.0.1	127.0.0.1	TCP	50	49568 → 12345 [PSH, ACK] Seq=27 Ack=1 Win=2619648 Len=6
+4463	170.822096	127.0.0.1	127.0.0.1	TCP	44	12345 → 49568 [ACK] Seq=1 Ack=33 Win=2619648 Len=0
+4464	170.822193	127.0.0.1	127.0.0.1	TCP	44	49568 → 12345 [FIN, ACK] Seq=33 Ack=1 Win=2619648 Len=0
+4465	170.822205	127.0.0.1	127.0.0.1	TCP	44	12345 → 49568 [ACK] Seq=1 Ack=34 Win=2619648 Len=0
+4466	170.822488	127.0.0.1	127.0.0.1	TCP	44	12345 → 49568 [FIN, ACK] Seq=1 Ack=34 Win=2619648 Len=0
+4467	170.822502	127.0.0.1	127.0.0.1	TCP	44	49568 → 12345 [ACK] Seq=34 Ack=2 Win=2619648 Len=0
+
+Unterschiede:
+
+- Bei TCP gibt es Aufbau der Verbindung. Hier kann man die Pakete 1569–1571 mit SYN, SYN-ACK und ACK sehen. Erst danach werden Daten übertragen (z.B. Paket 2291 mit [PSH, ACK] enthält Hallo).
+Bei UDP werden direkt Pakete als Datagramme gesendet, ohne vorherigen Verbindungsaufbau.
+- In TCP nach jedem PSH, ACK-Paket mit Nutzdaten folgt sofort ein ACK vom Empfänger (z.B. 2291 → 2292). TCP bestätigt jede Nachricht und das garantiert eine zuverlässige Zustellung.
+UDP hingegen sendet einfach das Paket ohne Bestätigung.
+- TCP beendet die Verbindung mit einem FIN-ACK-Austausch, UDP hört einfach nach dem stop-Paket auf.
+
+Gemeinsamkeiten:
+
+Beide Programme übertragen Textnachrichten und stoppen nach Befehl "stop" hin. Und beide Programme benötigen die Port-Nummern für Adressierung.
