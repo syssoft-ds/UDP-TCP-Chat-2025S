@@ -1,0 +1,47 @@
+## Aufgabe 1
+
+In beiden Programmen (nc_udp und nc_tcp) wird zunächst mit einem Argument "-l <port>" jeweils ein Sevrer erstellt.
+Danach wird über die IDE oder das Terminal mit dem Argument "<ip> <port>" einen Client für diesen Server erstellt.
+Dieser verbindet sich dann mit dem Server (ServerSocket -> Nachrichten an Server schicken)
+Mit einer Schleife läuft permanent die Eingabe, und erst wenn eine Eingabe erfolgt, dann wird die eingegebene Nachricht
+an der Server geschickt, dabei wird nur die Nachricht an den Server vermittelt ohne eine Antwort zu bekommen. In der entsprechenden
+nc_udp.pcapng sieht man, dass ich zwei, drei Nachrichten geschickt habe, bevor es mit stop abgebrochen wurde.
+
+Bei dem TCP-Programm ist es mit dem Argument für einen Server und einen Client gleich. Nur ist der Unterschied, dass
+jeder erstellte Client eine seperate unabhängige Verbindung zum Server aufbaut. Entsprechend wird hier mit dem 3-Way Handshake 
+bei dem TCP-Programm gearbeitet. Mit dem Start des Clients wird eine SYN Anfrage bzw. ein SYN Paket an den Server geschickt, welcher
+wiederum der Server bestätigt und mit einem SYN-ACK Paket beantwortet, bevor der Client die eigentliche Anfrage mit dem ACK-Paket dem Server 
+vermittelt. Das SYN -> SYN-ACK -> ACK (3-Way Handshake) sieht man in det nc_tcp.pcapng bspw. am Anfang sehr gut, als der Client gestartet wurde
+und dem Server erst eine Anfrage schickt, bevor der Client vom Server wirklich registriert wird.
+
+Unterschiede:
+TCP -> 3-Way Handshake -> eigentliche Aufgabe wird an Server erst nach Bestätigung SYN-ACK mit ACK Paket vermittelt
+UDP -> verbindungslos -> Nachrichten werden direkt an Server vermittelt
+
+Gemeinsamkeiten:
+Nur das jeweils ein Server mit Argument "-l <port>" erstellt wird
+
+
+
+## Aufgabe 2
+
+Befehle:
+- Start der Instanz/en: java UDPChat <name> <port>  
+- Registrieren einer Instanz (Verbindungsaufbau): register <name> <ip> <port>
+- Senden: send <name> <message>
+
+
+
+
+## Aufgabe 3
+
+Befehle:
+- Start des Servers: java TCPChat -l <port>
+- Starte einen/mehrere Client/s: java TCPChat <ip> <port> <name>
+- Nachricht senden: send <name> <message>
+- stop -> terminiert Programm
+
+
+
+## Aufgabe 4
+siehe Uebung03_A4.pdf
