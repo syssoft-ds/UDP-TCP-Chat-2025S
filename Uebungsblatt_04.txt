@@ -1,0 +1,166 @@
+Nr. 1) 
+
+TCP: 
+Ich habe einen Server erstellt, indem ich "python nc_tcp.py -l 12345" in eine Kommandozeile eingegeben habe. 
+Anschließend habe ich über drei Kommandozeilen mit je dem Befehl "python nc_tcp.py 127.0.0.1 12345" Clients 
+verbunden. Dann habe ich beliebige Strings zum Testen verschickt, wie man in der Server-Konsole sehen kann:
+
+  "Message <'jojojo'> received from client ('127.0.0.1', 36829)
+   Message <'hihihi'> received from client ('127.0.0.1', 36829)
+   Message <'simojh'> received from client ('127.0.0.1', 36917)
+   Message <'jdsjdxj'> received from client ('127.0.0.1', 36885)
+   Message <'lodoid'> received from client ('127.0.0.1', 36917)
+   Message <'kdkd'> received from client ('127.0.0.1', 36885)
+   Message <'isis'> received from client ('127.0.0.1', 36829)
+   Message <'ikdid'> received from client ('127.0.0.1', 36885)
+   Message <'ikdid'> received from client ('127.0.0.1', 36917)
+   Message <'pdpod'> received from client ('127.0.0.1', 36829)
+   Message <'odoid'> received from client ('127.0.0.1', 36917)
+   Message <'kdkd'> received from client ('127.0.0.1', 36885)
+   Message <'ööö'> received from client ('127.0.0.1', 36829)
+   Message <'isidsi'> received from client ('127.0.0.1', 36917)
+   Message <'jkdkjd'> received from client ('127.0.0.1', 36885)
+   Message <'kdkd'> received from client ('127.0.0.1', 36917)
+   Message <'lkdkd'> received from client ('127.0.0.1', 36829)"
+
+Ich habe per WireShark den Verlauf gecaptured. Dieser ist als Datei mit dem Namen "tcp_capture" mit angehangen.
+Mit dem Filter "tcp.port == 12345" findet man präziser alle captures von dem Kommunikationsnetz.
+
+UDP:
+Die Befehle gehen alle analog mit "udp" statt "tcp". Hier beispielsweise wieder ein Dialogprotokoll:
+
+   "Message <'hihi'> received from client ('127.0.0.1', 51920)
+    Message <'jdj'> received from client ('127.0.0.1', 51921)
+    Message <'dkoidki'> received from client ('127.0.0.1', 64874)
+    Message <'kjidjkd'> received from client ('127.0.0.1', 51920)
+    Message <'jdju'> received from client ('127.0.0.1', 51921)
+    Message <'jdj'> received from client ('127.0.0.1', 64874)
+    Message <'hallöchen'> received from client ('127.0.0.1', 51920)
+    Message <'moin dirk alter'> received from client ('127.0.0.1', 64874)
+    Message <'whats poppin'> received from client ('127.0.0.1', 51921)"
+
+Im Anhang befndet sich analog dazu ein WireShark Capture mit dem Namen "udp_capture".
+Hier ist analog der Filter "udp.port==12345" hilfreich.
+
+Vergleicht man (mit jeweils angewendetem Filter) beide Captures, fällt Folgendes auf:
+Bei UDP entspricht die Anzahl der erfassten Pakete exakt der Anzahl der versendeten Nachrichten. Bei TCP hingegen 
+wurden viel mehr (i.e. doppelt so viele) erfasst. Dies hängt mit den Handshakes zusammen, die bei TCP gemacht werden, um die Zustellung
+der Nachrichten zu garantieren.
+Betrachtet man dazu exemplarisch ein Paket:
+
+Bei UDP haben wir pro Paket z.B. die Info "51920 → 12345 Len=4", also das Senden vom Client (51920) zum Server (12345). Hier findet sich 
+auch unten im Protokoll die Nachricht "hihi" wieder.
+Bei TCP hingegen hat man einmal ein Paket mit der Info "36829 → 12345 [PSH, ACK] Seq=1 Ack=1 Win=10233 Len=6" und ein dazugehöriges Paket 
+mit der Info "12345 → 36829 [ACK] Seq=1 Ack=7 Win=10232 Len=0". Hier ist der Handshake schön zu erkennen, da einmal vom Client zum Server 
+(36829 → 12345) und einmal vom Server zurück zum Client (12345 → 36829) gesendet wird.
+
+
+Nr.2) 
+Mit dem Befehl "python chat_udp.py <your_name> <port>" kann ich mich im Netz anmelden. Mit dem Befehl "<your_name> <target_ip> <target_port>" 
+registriere ich meinen Namen bei einem anderen Client, dieser kann mir dann mit "send <target_name> <text>" dann Nachrichten zuschicken oder sich mit
+"<your_name> <target_ip> <target_port>" bei mir Registrieren, damit wir uns gegenseitig Namen zuschicken können. Mit einem dritten, vierten,...
+Client geht es analog weiter.
+
+Ich habe das Programm über mehrere Konsolen auf einem und den selben Rechner zum laufen gebracht und exemplarisch etwas mit mir selbst kommuniziert:
+
+
+Client 1:
+
+   "C:\Users\schwu\OneDrive\Desktop\studium\B.SC.Mathe\Informatik\Rechnernetze\Blatt3>python chat_udp.py Tyler 12346
+    register Tyler 12345
+    Usage: register <your_name> <target_ip> <target_port> #Automatische Fehlermeldung für den Port
+    register Tyler 127.0.0.1 12345
+    [System] Me registered from 127.0.0.1:12345
+    send Me Hi!
+    [Me] Hi, who's there?
+    send Me guess who
+    [Me] who?
+    send Me It's you!
+    send Me There is no Tyler, only You
+    [Me] :( "
+
+
+Client 2:
+
+   "C:\Users\schwu\OneDrive\Desktop\studium\B.SC.Mathe\Informatik\Rechnernetze\Blatt3>python chat_udp.py Me 12345
+    [System] Tyler registered from 127.0.0.1:12346
+    register Me 127.0.0.1 12346
+    [Tyler] Hi!
+    send Tyler Hi, who's there?
+    [Tyler] guess who
+    send Tyler who?
+    [Tyler] It's you!
+    [Tyler] There is no Tyler, only You
+    send Tyler :( "
+
+
+Nr. 3) 
+Mit dem Befehl "python chat_tcp.py -l <server_port>" wird der Server initialisiert
+Mit dem Befehl "python chat_tcp.py <your_IP> <your_port> <your_name>" kann man sich als Client beim Server registrieren.
+Sind mindestens zwei Clients registriert, kann einer dem anderen eine Nachricht mit
+"send <target_name> <text>" Schicken. Hier ein Beispiel-Dialog:
+
+Dialog der Server Konsole:
+
+   "C:\Users\schwu\OneDrive\Desktop\studium\B.SC.Mathe\Informatik\Rechnernetze\Blatt3>python chat_tcp.py -l 12345
+    [Server] Listening on port 12345...
+    [Server] Connection from ('127.0.0.1', 39613)
+    [Server] Registered client: Tyler
+    [Server] Connection from ('127.0.0.1', 39623)
+    [Server] Registered client: Me "
+
+
+Client 1:
+
+   "C:\Users\schwu\OneDrive\Desktop\studium\B.SC.Mathe\Informatik\Rechnernetze\Blatt3>python chat_tcp.py 127.0.0.1 12345 Tyler
+    [Client] Connected to server at 127.0.0.1:12345
+    [System] Registered as Tyler
+    [Me] Hallo
+    send Me Wer bist duuu denn
+    [Me] Ach Gott, Denkfehler
+    [Me] Wer bist duuuuu denn
+    send Me Ich bin du du Esel
+    [Me] Sorry, wieder vertan
+    [Me] Nein!
+    send Me Doch!
+    [Me] ohh! "
+
+Client 2:
+
+   "C:\Users\schwu\OneDrive\Desktop\studium\B.SC.Mathe\Informatik\Rechnernetze\Blatt3>python chat_tcp.py 127.0.0.1 12345 Me
+    [Client] Connected to server at 127.0.0.1:12345
+    [System] Registered as Me
+    send Tyler Hallo
+    [Tyler] Wer bist duuu denn
+    send Me Ich bin du du Esel
+    [Me] Ich bin du du Esel
+    send Tyler Ach Gott, Denkfehler
+    send Tyler Wer bist duuuuu denn
+    [Tyler] Ich bin du du Esel
+    send Me Nein!
+    [Me] Nein!
+    send Tyler Sorry, wieder vertan
+    send Tyler Nein!
+    [Tyler] Doch!
+    send Tyler ohh! "
+
+
+
+
+
+Note: Sowohl bei Nummer 2) als auch bei Nummer 3) war ich mit der Implementierung etwas überfordert und habe zuerst haufenweise Errors
+etc. gehabt. Ich habe daher mein Code von ChatGTP überarbeiten lassen und mir die Schritte erklären lassen. 
+
+
+
+Nr. 4) Da ein Manchester-Code gegeben ist, gehe ich nun eher davon aus, dass die Bitfolge zu ermitteln ist. Hierbei bin
+ich aber nicht mehr weitergekommen, da ich auf folgendes Problem gestoßen bin:
+Ich nutze die Definition, bei der ein Fall in einem Intervall der 1 und ein Steigen der 0 entspricht. Nummeriert man die gegebenen
+Intervalle von 1 bis 7 durch, ist in Intervall 4, 5 und 7 weder ein Anstieg, noch ein Fall zu sehen. Ich habe keine Erklärung,
+welcher Bit hier dann gemeint sein soll. Lässt man diese Codierstellen frei, ergibt sich der Code:
+
+	1   0   0  (?) (?)  1  (?)
+
+
+
+
