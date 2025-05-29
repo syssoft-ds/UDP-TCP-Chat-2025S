@@ -1,0 +1,13 @@
+Beide Programme erstellen einen Server, sodass Clients Nachrichten senden können, die vom Server empfangen werden.
+Für den Nutzer gibt es auf den ersten Blick keinen Unterschied.
+
+Letztendlich funktionieren beide Protokolle jedoch anders, was in den aufgezeichneten Paketen sichtbar wird:
+Während UDP einfach "drauf los" kommuniziert, baut TCP erst einmal eine zuverlässige Verbindung auf, indem es den Handshake ausführt.
+Dies ist auch ersichtlich, wenn man sich die beiden Aufzeichnungen ansieht - dort werden bereits beim Etablieren der Verbindung Pakete ausgetauscht (= Handshake).
+Dementsprechend benötigt TCP auch insgesamt mehr Pakete als UDP, stellt dafür jedoch eine gültige Verbindung her.
+
+Ein weiterer Unterschied ist, das UDP mit einem Kanal/Thread arbeitet und alle Nachrichten dort verarbeitet.
+TCP hingegen nutzt für jeden Client einen eigenen Thread - jeder Thread ist also für genau einen Client verantwortlich.
+
+UDP ist demnach eher unzuverlässig, weil die Pakete verloren gehen könnten oder auch die Reihenfolge falsch ist.
+TCP hingegen ist zuverlässig und die Pakete gehen nicht verloren, weil die Verbindung gültig ist.
