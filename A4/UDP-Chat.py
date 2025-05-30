@@ -2,6 +2,7 @@ import socket
 import sys
 import threading
 import json
+import datetime
 
 class ChatClient:
     # Initialisierung von Client mit Namen und Port
@@ -12,6 +13,11 @@ class ChatClient:
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.socket.bind(('0.0.0.0', self.listen_port))
         self.running = True
+        self.predefined_responses = {
+            "was ist deine ip-adresse?": self.get_local_ip(),
+            "wie viel uhr haben wir?": self.get_current_time(),
+            "welche rechnernetze ha war das?": "4. HA, Aufgabe 4."
+        }
 
     # sendet Registierungsnachricht
     def register(self, target_host, target_port):
@@ -50,16 +56,31 @@ class ChatClient:
                         self.send_message(host, port, json.dumps(self_info).encode())
                 elif message['type'] == 'message':
                     sender_name = message.get('sender')
-                    content = message.get('content')
-                    print(f"Nachricht von '{sender_name}': {content}")
+                    content = message.get('content').lower() # Für case-insensitive Vergleich
+                    print(f"Nachricht von '{sender_name}': {message.get('content')}")
+
+                    # Überprüfung, ob es sich bei der Nachricht um eine vordefinierte Frage handelt
+                    if content in self.predefined_responses:
+                        response = self.predefined_responses[content]
+                        response_message = {
+                            'type': 'message',
+                            'sender': self.name,
+                            'content': response
+                        }
+                        recipient_address = self.known_peers.get(sender_name)
+                        if recipient_address:
+                            self.send_message(recipient_address[0], recipient_address[1], json.dumps(response_message).encode())
+                            print(f"Automatische Antwort an '{sender_name}' gesendet: {response}")
+                        else:
+                            print(f"Konnte '{sender_name}' in den bekannten Peers nicht finden, um automatisch zu antworten.")
             except json.JSONDecodeError:
                 print(f"Ungültiges JSON von {address}: {data.decode()}")
             except socket.error as e:
                 if self.running:
                     print(f"Fehler beim Empfangen: {e}")
                     break
-    
-    # sendet Daten per UDP
+
+    # sendet Nachricht an einen Client              
     def send_message(self, host, port, data):
         self.socket.sendto(data, (host, port))
 
@@ -80,6 +101,22 @@ class ChatClient:
         else:
             print(f"'{recipient_name}' ist nicht bekannt.")
 
+    # sendet Nachricht an alle bekannten Clients
+    def send_all(self, message_content):
+        message = {
+            'type': 'message',
+            'sender': self.name,
+            'content': message_content
+        }
+        message_encoded = json.dumps(message).encode()
+        for name, address in self.known_peers.items():
+            host, port = address
+            try:
+                self.send_message(host, port, message_encoded)
+                print(f"Nachricht an '{name}' gesendet: {message_content}")
+            except Exception as e:
+                print(f"Fehler beim Senden der Nachricht an '{name}': {e}")
+
     # ermittelt lokale IP des Rechners
     def get_local_ip(self):
         try:
@@ -92,6 +129,11 @@ class ChatClient:
             return local_ip
         except socket.error:
             return "127.0.0.1" # Fallback
+
+    # Abfrage der aktuellen Systemzeit
+    def get_current_time(self):
+        now = datetime.datetime.now()
+        return now.strftime("%H:%M:%S")
 
     # Kommandozeile Schnittstelle für Interaktion im Chat
     def command_line_interface(self):
@@ -112,6 +154,9 @@ class ChatClient:
                 recipient_name = command[1]
                 message = " ".join(command[2:])
                 self.send_chat_message(recipient_name, message)
+            elif action == 'send_all' and len(command) >= 2:
+                message = " ".join(command[1:])
+                self.send_all(message)
             elif action == 'peers':
                 print("Bekannte Peers:")
                 for name, address in self.known_peers.items():
@@ -121,9 +166,9 @@ class ChatClient:
                 print("Beende Chat.")
                 break
             else:
-                print("Ungültiger Befehl. Verfügbare Befehle: register <ip> <port>, send <name> <message>, peers, exit")
+                print("Ungültiger Befehl. Verfügbare Befehle: register <ip> <port>, send <name> <message>, send_all <message>, peers, exit")
 
-# Main-Methode mit Servermodus und Clientmodus
+# Main-Methode
 def main():
     if len(sys.argv) != 3:
         name = sys.argv[0]
