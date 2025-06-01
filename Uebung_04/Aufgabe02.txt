@@ -1,0 +1,70 @@
+103.161.122.83
+
+Das ist eine IP-Adresse, also die eindeutige Kennung eines Geräts, das sich in dem Netzwerk befindet.
+Sie ist 32 Bit lang, bestehend aus jeweils vier Teilen mit je acht Bits, um die Zahlen von 0-255 darzustellen.
+
+
+
+/18
+
+Das ist die Präfixlänge oder Netzmaskenlänge.
+Sie gibt an, wie viele Bits von links (vom höchstwertigen Bit) für den Netzwerkanteil der IP-Adresse reserviert sind.
+Die restlichen Bits sind für den Host-Anteil reserviert.
+
+Ergo definieren die ersten 18 Bits der IP-Adresse die Adresse des Netzwerks,
+während die restlichen 14 Bits für die Host-Adresse stehen.
+
+
+
+Daraus kann wie folgt die Subnetzmaske, Broadcastadresse und Netzwerkadresse ermittelt werden:
+
+1) IP-Adresse in binär umwandeln
+
+-> 01100111 10100001 01111010 01010011
+
+
+2) Subnetzmaske
+Die Präfixlänge /18 bedeutet, dass die ersten 18 Bits der Subnetzmaske auf 1 gesetzt sind und die restlichen Bits auf 0.
+
+-> 11111111.11111111.11000000.00000000
+-> 255.255.192.0 (dezimal)
+
+
+3) Netzwerkadresse
+Die Netzwerkadresse erhält man, indem man ein bitweises UND (AND) zwischen der IP-Adresse und der Subnetzmaske durchführt. ´
+Das bedeutet, nur wenn an einer Position in beiden Zahlen eine 1 steht, ist das Ergebnis an dieser Position ebenfalls eine 1.
+
+   01100111 10100001 01111010 01010011 (IP-Adresse)
+&& 11111111.11111111.11000000.00000000 (Subnetzmaske)
+-> 01100111.10100001.01000000.00000000
+-> 103.161.64.0 (dezimal)
+
+
+4) Broadcastadresse
+Die Broadcastadresse erhält man, indem man die Netzwerkadresse nimmt und alle Bits im Host-Anteil auf 1 setzt.
+Also in diesem Fall die letzten 14 Bits.
+
+-> 01100111.10100001.01111111.11111111
+-> 103.161.127.255 (dezimal)
+
+
+
+Um zu prüfen, ob die obige IP und 103.161.122.83/18 im selben Netz liegen, müssen wir für beide die Netzwerkadresse
+mit der gleichen Subnetzmaske ermitteln und vergleichen. 
+
+
+1) IP-Adresse in binär umwandeln
+-> 01100111 10100001 11000001 01010011
+
+2) Subnetzmaske
+-> Präfixlänge ist gleich, ergo ist auch die Subnetzmaske gleich
+
+3) Netzwerkadresse
+   01100111 10100001 11000001 01010011 (IP-Adresse)
+&& 11111111.11111111.11000000.00000000 (Subnetzmaske)
+-> 01100111.10100001.11000000.00000000
+-> 103.161.192.0 (dezimal)
+
+4) Vergleich der Netzwerkadressen
+-> 103.161.64.0 und 103.161.192.0
+-> NICHT IDENTISCH, also liegen sie nicht im selben Netz
