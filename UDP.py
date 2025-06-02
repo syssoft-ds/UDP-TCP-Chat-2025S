@@ -2,6 +2,7 @@ import socket
 import sys
 import threading
 import json
+import datetime
 
 # Global dictionary to store known clients: {name: (ip, port)}
 known_clients = {}
@@ -21,18 +22,18 @@ def handle_incoming_messages(s_sock):
             msg_type = msg_data.get("type")
 
             if msg_type == "register":
-                handle_message_register(s_sock, c_address, msg_data, message)
+                handle_message_register(s_sock, c_address, msg_data)
 
             elif msg_type == "register_ack":
                 handle_message_register_ack(msg_data)
 
             elif msg_type == "chat":
-                handle_message_chat(msg_data)
+                handle_message_chat(s_sock, msg_data)
             
         except Exception as e:
             print(f"Error handling incoming message: {e}")
 
-def handle_message_register(s_sock, c_address, msg_data, message):
+def handle_message_register(s_sock, c_address, msg_data):
     
     sender_name = msg_data.get("name")
     sender_ip = msg_data.get("ip")
@@ -66,14 +67,35 @@ def handle_message_register_ack(msg_data):
     else:
         print(f"Received registration acknowledgment from: {ack_name} (already known).")
 
-def handle_message_chat(msg_data):
+def handle_message_chat(s_sock, msg_data):
     sender_name = msg_data.get("sender")
     chat_message = msg_data.get("message")
     print(f"[{sender_name}]: {chat_message}")
+
+    # Auto-reply functionality
+    auto_reply_message = None
+    if "was ist deine ip-adresse?" in chat_message.lower():
+        auto_reply_message = f"Meine IP-Adresse ist: {my_ip}"
+    elif "wie viel uhr haben wir?" in chat_message.lower():
+        auto_reply_message = f"Es ist jetzt: {datetime.datetime.now().strftime('%H:%M:%S')}"
+    elif "welche rechnernetze ha war das?" in chat_message.lower():
+        auto_reply_message = "4. HA, - Aufgabe 4"
+    
+    if auto_reply_message:
+        reply_msg = {
+            "type": "chat",
+            "sender": my_name,
+            "message": auto_reply_message
+        }
+        # Find the address of the sender to reply
+        if sender_name in known_clients:
+            target_ip, target_port = known_clients[sender_name]
+            s_sock.sendto(json.dumps(reply_msg).encode(), (target_ip, target_port))
+            print(f"Sent auto-reply to {sender_name}: {auto_reply_message}")
+        else:
+            print(f"Cannot auto-reply: Sender '{sender_name}' not in known clients.")
    
-
-
-#Starts the UDP server to listen for incoming messages.
+# Starts the UDP server to listen for incoming messages.
 def start_server(name, port):
 
     global my_name, my_port, my_ip
@@ -91,7 +113,7 @@ def start_server(name, port):
         threading.Thread(target=handle_incoming_messages, args=(s_sock,), daemon=True).start()
 
         # list all commands for user to know what to do
-        print("Ready for commands (register <ip> <port>, send <name> <message>, list, stop):")
+        print("Ready for commands (register <ip> <port>, send <name> <message>, send_all <message>, peers, exit):")
 
         while True:
 
@@ -108,7 +130,10 @@ def start_server(name, port):
                 elif command == "send":
                     send_message(parts)
 
-                elif command == "list":
+                elif command == "send_all":
+                    send_all_message(parts)
+
+                elif command == "peers":
                     if known_clients:
                         print("Known clients:")
                         for name, (ip, port) in known_clients.items():
@@ -116,12 +141,12 @@ def start_server(name, port):
                     else:
                         print("No clients registered yet.")
 
-                elif command == "stop":
+                elif command == "exit":
                     print("Shutting down...")
                     break
 
                 else:
-                    print("Unknown command. Available commands: register <ip> <port>, send <name> <message>, list, stop")
+                    print("Unknown command. Available commands: register <ip> <port>, send <name> <message>, send_all <message>, peers, exit")
 
             except Exception as e:
                 print(f"Error: {e}")
@@ -160,10 +185,34 @@ def send_message(parts):
                 c_sock.sendto(json.dumps(chat_msg).encode(), (target_ip, target_port))
                 print(f"Message sent to {target_name}")
         else:
-            print(f"Client '{target_name}' not found. Use 'list' to see known clients.")
+            print(f"Client '{target_name}' not found. Use 'peers' to see known clients.")
     else:
         print("Usage: send <name> <message>")
 
+def send_all_message(parts):
+    if len(parts) >= 2:
+        message = parts[1]
+        if not known_clients:
+            print("No clients registered to send to.")
+            return
+
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as c_sock:
+            chat_msg = {
+                "type": "chat",
+                "sender": my_name,
+                "message": message
+            }
+            encoded_msg = json.dumps(chat_msg).encode()
+
+            for name, (ip, port) in known_clients.items():
+                if name != my_name: # Don't send to self
+                    try:
+                        c_sock.sendto(encoded_msg, (ip, port))
+                        print(f"Message sent to {name} ({ip}:{port})")
+                    except Exception as e:
+                        print(f"Error sending message to {name}: {e}")
+    else:
+        print("Usage: send_all <message>")
 
 
 #main, called using "python UDP.py Alex 4200" (at least two consoles with different names and ports)
