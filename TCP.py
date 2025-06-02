@@ -2,13 +2,13 @@ import socket
 import sys
 import threading
 import json
+import datetime
 
 #Global dictionary to store known clients: {name: client_socket}
 #This will store the actual socket connection for each registered client.
 known_clients = {}
 #A lock to protect access to the known_clients dictionary from multiple threads
 clients_lock = threading.Lock()
-
 
 
 #Called when program executed as server using "python TCP.py -l <port>"
@@ -51,6 +51,9 @@ def serveClient(c_sock, c_address):
                     
                 elif msg_type == "chat":
                     handle_message_chat(c_sock, c_address, client_name, msg_data)
+                
+                elif msg_type == "broadcast":
+                    handle_message_broadcast(c_sock, c_address, client_name, msg_data)
                     
                 elif msg_type == "list":
                     #Handle request to list known clients
@@ -130,6 +133,32 @@ def handle_message_chat(c_sock, c_address, client_name, msg_data):
     else:
         print(f"Unregistered client {c_address} sent chat message.")
 
+def handle_message_broadcast(c_sock, c_address, client_name, msg_data):
+
+    if client_name:
+
+        broadcast_message = msg_data.get("message")
+
+        with clients_lock:
+
+            for name, sock in known_clients.items():
+
+                if name != client_name: #Don't send broadcast back to sender
+                    
+                    forward_msg = {"type": "chat", "sender": f"BROADCAST from {client_name}", "message": broadcast_message}
+                    
+                    try:
+                        sock.sendall(json.dumps(forward_msg).encode())
+                        print(f"Broadcast from {client_name} forwarded to {name}.")
+                    except Exception as e:
+                        print(f"Error sending broadcast to {name}: {e}")
+            
+            #Send an acknowledgment to the sender that the broadcast was processed
+            ack_msg = {"type": "broadcast_ack", "status": "success", "message": "Broadcast sent to all known clients."}
+            c_sock.sendall(json.dumps(ack_msg).encode())
+
+    else:
+        print(f"Unregistered client {c_address} sent broadcast message.")
 
 
 #Called when program executed as client using "python TCP.py <server_ip> <server_port> <your_name>"
@@ -140,14 +169,14 @@ def client(host, port, my_name):
             print(f"Connected to server at {host}:{port}")
 
             #Start a thread to handle incoming messages from the server
-            threading.Thread(target=client_receive_handler, args=(c_sock,), daemon=True).start()
+            threading.Thread(target=client_receive_handler, args=(c_sock, my_name), daemon=True).start()
 
             #Send initial registration message
             reg_msg = {"type": "register", "name": my_name}
             c_sock.sendall(json.dumps(reg_msg).encode())
             print(f"Sent registration request as '{my_name}' to server.")
 
-            print("Ready for commands (send <name> <message>, list, stop):")
+            print("Ready for commands (send <name> <message>, broadcast <message>, list, stop):")
 
             for line in sys.stdin:
                 line = line.rstrip()
@@ -167,6 +196,18 @@ def client(host, port, my_name):
                         print(f"Requested to send message to {target_name}.")
                     else:
                         print("Usage: send <name> <message>")
+                
+                elif command == "broadcast":
+                    if len(parts) >= 2:
+                        message_content = parts[1]
+                        broadcast_msg = {
+                            "type": "broadcast",
+                            "message": message_content
+                        }
+                        c_sock.sendall(json.dumps(broadcast_msg).encode())
+                        print(f"Requested to broadcast message: {message_content}.")
+                    else:
+                        print("Usage: broadcast <message>")
 
                 elif command == "list":
                     list_req_msg = {"type": "list"}
@@ -180,14 +221,14 @@ def client(host, port, my_name):
                     break #Exit the input loop and close the client socket
 
                 else:
-                    print("Unknown command. Available commands: send <name> <message>, list, stop")
+                    print("Unknown command. Available commands: send <name> <message>, broadcast <message>, list, stop")
 
         except Exception as e:
             print(f"Client error: {e}")
             print("Client shutting down.")
 
 #Handles incoming messages for the client from the server
-def client_receive_handler(c_sock):
+def client_receive_handler(c_sock, my_name):
     while True:
         try:
             message = c_sock.recv(4096).decode().rstrip()
@@ -212,6 +253,28 @@ def client_receive_handler(c_sock):
                 chat_message = msg_data.get("message")
                 print(f"[{sender_name}]: {chat_message}")
 
+                if sender_name != my_name: #Avoid replying to self if broadcasted to self (not supposed to happen with current server logic)
+                    response_message = None
+                    if "Was ist deine IP-Adresse?" in chat_message:
+                        ip_addr = "127.0.0.1"
+                        response_message = f"Meine IP-Adresse ist: {ip_addr}"
+                    elif "Wie viel Uhr haben wir?" in chat_message:
+                        current_time = datetime.datetime.now().strftime("%H:%M:%S")
+                        response_message = f"Es ist {current_time} Uhr."
+                    elif "Welche Rechnernetze HA war das?" in chat_message:
+                        response_message = "4. HA, Aufgabe 4"
+
+                    if response_message:
+                        #Send the automatic response back to the sender
+                        response_msg_data = {
+                            "type": "chat",
+                            "recipient": sender_name,
+                            "message": response_message
+                        }
+                        c_sock.sendall(json.dumps(response_msg_data).encode())
+                        print(f"Sent automatic response to {sender_name}: {response_message}")
+
+
             elif msg_type == "client_list":
                 clients = msg_data.get("clients", [])
                 if clients:
@@ -220,6 +283,15 @@ def client_receive_handler(c_sock):
                         print(f"  - {name}")
                 else:
                     print("No clients registered yet on the server.")
+            
+            elif msg_type == "broadcast_ack":
+                status = msg_data.get("status")
+                ack_message = msg_data.get("message")
+                print(f"Broadcast Acknowledgment: {status.upper()} - {ack_message}")
+
+            elif msg_type == "error":
+                error_message = msg_data.get("message")
+                print(f"Server Error: {error_message}")
 
         except Exception as e:
             print(f"Error in client receive thread: {e}")
@@ -255,5 +327,5 @@ if __name__ == '__main__':
 
 
 
-#Program did not run - it always stopped when the "listen()"-command was reached in line 18
-#I don't have an explanation for this and it seems strange cause it was part of the original program and worked there (see task 1)
+#Program did not work again, cause the following error appeared (most likely due to my firewall):
+#Es konnte keine Verbindung hergestellt werden, da der Zielcomputer die Verbindung verweigerte
