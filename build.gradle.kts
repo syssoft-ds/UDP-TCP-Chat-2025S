@@ -45,7 +45,7 @@ dependencies {
 
 tasks.register<JavaExec>("runMain_tcp") {
     group = "application"
-    mainClass.set("Main_TCP")
+    mainClass.set("tcp/Main_TCP")
     classpath = sourceSets.main.get().runtimeClasspath
     standardInput = System.`in`
 }
