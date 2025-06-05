@@ -8,10 +8,15 @@ public class ChatProtocoll {
 
     private ChatProtocoll(){}
 
+    //tcp
     public static final Charset CHARSET = StandardCharsets.UTF_8;
     public static final ByteOrder BYTE_ORDER = ByteOrder.BIG_ENDIAN;
     public static final String SEP = ",";
 
+    //udp
+    public static final int PACKET_SIZE = 4096;
+
+    //common
     public static final int CONNECT_REQUEST = 0x01;
     public static final int REGISTRATION = 0x02;
     public static final int MESSAGE = 0x03;

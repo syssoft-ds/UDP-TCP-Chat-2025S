@@ -37,8 +37,9 @@ public class Message {
     public Message(byte[] payload)
     {
         this.header = payload[0];
-        this.length = payload.length - 5;
-        this.payload = new String(Arrays.copyOfRange(payload, 4, payload.length));
+        byte[] size = Arrays.copyOfRange(payload, 1, 5);
+        this.length = ByteBuffer.wrap(size).order(ChatProtocoll.BYTE_ORDER).getInt();
+        this.payload = new String(Arrays.copyOfRange(payload, 5, 5 + this.length));
     }
 
     public Message(InputStream in) throws IOException, SocketException

@@ -38,8 +38,7 @@ sourceSets {
 
 dependencies {
     implementation("com.fasterxml.jackson.core:jackson-annotations:2.17.0")
-    implementation("com.fasterxml.jackson.core:jackson-databind:2.17.0")
-    implementation("com.fasterxml.jackson.core:jackson-core:2.17.0")
+    implementation("com.fasterxml.jackson.core:jackson-annotations:2.17.0")
     implementation("org.javatuples:javatuples:1.2")
 }
 
@@ -52,7 +51,7 @@ tasks.register<JavaExec>("runMain_tcp") {
 
 tasks.register<JavaExec>("runMain_udp") {
     group = "application"
-    mainClass.set("Main_UDP")
+    mainClass.set("udp/Main_UDP")
     classpath = sourceSets.main.get().runtimeClasspath
     standardInput = System.`in`
 }
