@@ -69,6 +69,23 @@ public class Main {
                 s.close();
                 break;
             }
+            if (line.equalsIgnoreCase("clients")) {
+                System.out.println("Bekannte Kontakte:");
+                for (Map.Entry<String, InetSocketAddress> entry : contacts.entrySet()) {
+                    System.out.println("- " + entry.getKey() + " @ " + entry.getValue());
+                }
+                continue;
+            }
+
+            if (line.startsWith("sendall ")) {
+                String msg = line.substring(8);
+                String formattedMessage = "msg " + myName + " " + msg;
+                for (InetSocketAddress recipient : contacts.values()) {
+                    sendMessage(s, formattedMessage, recipient.getAddress(), recipient.getPort());
+                }
+                continue;
+            }
+
 
             if (line.startsWith("send ")) {
                 String[] parts = line.split(" ", 3);
@@ -122,15 +139,60 @@ public class Main {
                 }
                 // Sonst: Kontakt bekannt, keine Antwort senden -> Endlosschleife vermeiden
             }
-        } else if (message.startsWith("msg")) {
+        }
+        else if (message.startsWith("Hello, this is ")) {
+            try {
+                String[] parts = message.split(", ");
+                String name = parts[1].split(" ")[2];
+                String ip = parts[2].split(" ")[4];
+                int theirPort = Integer.parseInt(parts[3].split(" ")[4]);
+
+                InetSocketAddress newContact = new InetSocketAddress(ip, theirPort);
+                if (!contacts.containsKey(name) || !contacts.get(name).equals(newContact)) {
+                    contacts.put(name, newContact);
+                    System.out.println("Registriert: " + name + " @ " + ip + ":" + theirPort);
+                }
+            } catch (Exception e) {
+                System.out.println("Fehler beim Verarbeiten der Muster-Registrierung: " + e.getMessage());
+            }
+        }
+
+        else if (message.startsWith("msg")) {
             // Format: msg <sender_name> <message>
             String[] parts = message.split(" ", 3);
             if (parts.length == 3) {
                 String from = parts[1];
                 String text = parts[2];
                 System.out.println("Nachricht von " + from + ": " + text);
+
+                // Automatische Antworten auf bestimmte Fragen
+                String antwort = null;
+
+                if (text.equalsIgnoreCase("Was ist deine MAC-Adresse?")) {
+                    antwort = "Meine MAC-Adresse ist 00:11:22:33:44:55";
+                } else if (text.equalsIgnoreCase("Sind Kartoffeln eine richtige Mahlzeit?")) {
+                    antwort = "Absolut! Kartoffeln sind vielseitig und lecker!";
+                }
+
+                if (antwort != null) {
+                    InetSocketAddress empfaengerAdresse = contacts.get(from);
+                    if (empfaengerAdresse != null) {
+                        String replyMsg = "msg " + myName + " " + antwort;
+                        try {
+                            sendMessage(s, replyMsg,
+                                    empfaengerAdresse.getAddress(), empfaengerAdresse.getPort());
+                        } catch (IOException e) {
+                            System.out.println("Fehler beim automatischen Antworten: " + e.getMessage());
+                        }
+                    } else {
+                        System.out.println("Absender '" + from + "' nicht in contacts gefunden.");
+                    }
+                }
             }
-        } else {
+        }
+
+
+        else {
             System.out.println("Unbekannte Nachricht: " + message);
         }
     }
@@ -171,6 +233,22 @@ public class Main {
             if (line.equalsIgnoreCase("stop")) {
                 s.close();
                 break;
+            }
+            if (line.equalsIgnoreCase("clients")) {
+                System.out.println("Bekannte Kontakte:");
+                for (Map.Entry<String, InetSocketAddress> entry : contacts.entrySet()) {
+                    System.out.println("- " + entry.getKey() + " @ " + entry.getValue());
+                }
+                continue;
+            }
+
+            if (line.startsWith("sendall ")) {
+                String msg = line.substring(8);
+                String formattedMessage = "msg " + myName + " " + msg;
+                for (InetSocketAddress recipient : contacts.values()) {
+                    sendMessage(s, formattedMessage, recipient.getAddress(), recipient.getPort());
+                }
+                continue;
             }
 
             if (line.startsWith("send ")) {

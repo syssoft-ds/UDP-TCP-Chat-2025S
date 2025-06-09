@@ -1,0 +1,208 @@
+Aufgabe 1) 
+IPV4 (bei mir DNS Protocol No. 9204 siehe pcap-Datei):
+
+Kategorie 	               Beschreibung
+
+Version	IP-Version              4
+Header Length			20 bytes (5)
+Differentiated Services		0x00 (DSCP: CS0, ECN: Not-ECT)
+				0000 00.. = Differentiated Services Codepoint: Default (0)
+				.... ..00 = Explicit Congestion Notification: Not ECN-Capable Transport (0)
+Total Length			65
+Identification			0xdbc8 (56264)
+Flags				0x0
+Fragment Offset			0
+Time to Live 			128		
+Protocol			UDP (17)
+Header Checksum			0x0000 [validation disabled]
+Source Address			192.168.0.254
+Destination Address		192.168.0.1
+
+
+
+TCP (No. 9125): 
+
+Kategorie 			Beschreibung
+
+Version	IP-Version              4
+Header Length			20 bytes (5)
+Differentiated Services		0x00 (DSCP: CS0, ECN: Not-ECT)
+				0000 00.. = Differentiated Services Codepoint: Default (0)
+				.... ..00 = Explicit Congestion Notification: Not ECN-Capable Transport (0)
+Total Length			40
+Identification			0x1fe8 (8168)
+Flags				0x2, Don't fragment
+Fragment Offset			0
+Time to Live 			128		
+Protocol			TCP (6)
+Header Checksum			0x0000 [validation disabled]
+Source Address			192.168.0.254
+Destination Address		204.79.197.222
+
+
+
+UDP (No. 9017): 
+
+Kategorie 			Beschreibung
+
+Version	IP-Version              6 (hab kein 4 gefunden)
+Header Length			
+Differentiated Services		Default (0)
+Total Length			89 (Payload length)
+Identification			
+Flags				
+Fragment Offset			
+Time to Live 			58 (hop limit)		
+Protocol			UDP (17)
+Header Checksum			
+Source Address			2a00:1450:4001:830::200e
+Destination Address		2a02:810b:489a:1f00:87b:5857:34d8:fa7b
+
+
+Aufgabe 2:
+103.161.122.83 ist die IP-Adresse (IPv4)
+/18 ist die CIDR-Notation, gibt die Länge der Subnetzmaske an
+Subnetzmaske (32 Bit): erste 18 Bit = 1, restlichen 14 Bits = 0
+			11111111.11111111.11000000.00000000
+			in dezimal 255.255.192.0
+Netzwerkadresse (IP-Adresse AND Subnetzmaske): 
+	122 = 01111010
+	83 = 01010011
+	mit AND verbinden ergibt: 192 = 11000000
+	122 AND 192: 01000000 = 64
+	83 AND 0 (da letzte 14 Bits = 0): 0
+	in dezimal: 103.161.64.0
+Broadcastadresse: Max Hostadresse: alle 14 Bits auf 1:
+		  00000000.00000000.00111111.11111111
+    		  Drittes Oktett: 00111111 = 63
+		  Viertes Oktett: 11111111 = 255
+		Zu Netzwerkadresse (103.161.64.0) Werte dazuaddieren:
+		=> 103.161.127.255
+
+Liegt 103.161.122.83/18 im selben Netz wie 103.161.193.83/18?
+Nein, 103.161.122.83/18 liegt im Netzwerk 103.161.64.0/18
+und 103.161.193.83/18 liegt im Netzwerk 103.161.192.0/18
+
+
+Aufgabe 3)
+UDP-Programm:
+Ich habe im Code von meinem Programm etwas hinzugefügt damit es mit dem Mustercode kompatibel ist.
+
+Terminal 1:
+PS C:\Users\Honou\Desktop\UDP-TCP-Chat-2025S\Java - netcat UDP\src> javac oxoo2a/Main.java
+PS C:\Users\Honou\Desktop\UDP-TCP-Chat-2025S\Java - netcat UDP\src> java oxoo2a.Main Alice -l 5000
+Registriert: Bob @ 192.168.0.254:5001
+send Bob Hallo Bob!
+
+Terminal 2:
+PS C:\Users\Honou\Desktop\UDP-TCP-Chat-2025S\Java - netcat UDP\src> javac oxoo2a/Muster.java   
+PS C:\Users\Honou\Desktop\UDP-TCP-Chat-2025S\Java - netcat UDP\src> java oxoo2a.Muster 5001 Bob
+Bob (Port: 5001) is here, looking around.
+Use "register <ip address> <port number>" to contact another client.
+Use "send <registered client name> <message>" to message them.
+Use "quit" to exit program.
+register 127.0.0.1 5000
+Message sent.
+msg Alice Hallo Bob!
+
+Wie zu sehen ist funktioniert das chatten.
+
+
+TCP-Programm:
+
+Terminal 1 (Server vom eigenen Programm):
+PS C:\Users\Honou\Desktop\UDP-TCP-Chat-2025S\Java - netcat TCP\src> java oxoo2a.Main -l 6000
+Server gestartet auf Port 6000
+Alice registriert.
+Bob registriert.
+
+Terminal 2 (Client 1 vom eigenem Programm):
+PS C:\Users\Honou\Desktop\UDP-TCP-Chat-2025S\Java - netcat TCP\src> java oxoo2a.Main 127.0.0.1 6000
+Bitte registriere dich mit: register <deinName>
+register Alice
+Registrierung erfolgreich als 'Alice'
+Nachricht von Bob: Hallo Alice!
+send Bob Hi!
+
+Terminal 3 (Client 2 vom Musterprogramm):
+PS C:\Users\Honou\Desktop\UDP-TCP-Chat-2025S\Java - netcat TCP\src> java oxoo2a.Muster_Client 127.0.0.1 6000 Bob
+Bitte registriere dich mit: register <deinName>
+Registrierung erfolgreich als 'Bob'
+Bob is connected to Server at IP 127.0.0.1 on port 6000.
+Use "send <client name> <message>" to send a message to a client.
+send Alice Hallo Alice!
+Message sent.
+Nachricht von Alice: Hi!
+
+Wie zu sehen ist funktioniert das chatten.
+ 
+
+Aufgabe 4:
+UDP Programm:
+
+Terminal 1:
+PS C:\Users\Honou\Desktop\UDP-TCP-Chat-2025S\Java - netcat UDP\src> javac oxoo2a/Main.java        
+PS C:\Users\Honou\Desktop\UDP-TCP-Chat-2025S\Java - netcat UDP\src> java oxoo2a.Main Alice -l 6000
+Registriert: Bob @ 192.168.0.254:64376
+Registriert: Marvin @ 192.168.0.254:64377
+sendall Sind Kartoffeln eine richtige Mahlzeit? 
+Nachricht von Marvin: Absolut! Kartoffeln sind vielseitig und lecker!
+Nachricht von Bob: Absolut! Kartoffeln sind vielseitig und lecker!
+
+Terminal 2:
+PS C:\Users\Honou\Desktop\UDP-TCP-Chat-2025S\Java - netcat UDP\src> javac oxoo2a/Main.java             
+PS C:\Users\Honou\Desktop\UDP-TCP-Chat-2025S\Java - netcat UDP\src> java oxoo2a.Main Bob 127.0.0.1 6000
+Registriert: Alice @ 192.168.0.254:6000
+Nachricht von Alice: Sind Kartoffeln eine richtige Mahlzeit?
+
+Terminal 3:
+PS C:\Users\Honou\Desktop\UDP-TCP-Chat-2025S\Java - netcat UDP\src> javac oxoo2a/Main.java                
+PS C:\Users\Honou\Desktop\UDP-TCP-Chat-2025S\Java - netcat UDP\src> java oxoo2a.Main Marvin 127.0.0.1 6000
+Registriert: Alice @ 192.168.0.254:6000
+Nachricht von Alice: Sind Kartoffeln eine richtige Mahlzeit?
+
+Funktioniert demnach alles.
+
+
+TCP Programm:
+
+Terminal 1 (Server):
+PS C:\Users\Honou\Desktop\UDP-TCP-Chat-2025S\Java - netcat TCP\src> javac oxoo2a/Main.java  
+PS C:\Users\Honou\Desktop\UDP-TCP-Chat-2025S\Java - netcat TCP\src> java oxoo2a.Main -l 6000
+Server gestartet auf Port 6000
+Alice registriert.
+Bob registriert.
+Marvin registriert.
+
+Terminal 2 (Client 1):
+PS C:\Users\Honou\Desktop\UDP-TCP-Chat-2025S\Java - netcat TCP\src> javac oxoo2a/Main.java               
+PS C:\Users\Honou\Desktop\UDP-TCP-Chat-2025S\Java - netcat TCP\src> java oxoo2a.Main 127.0.0.1 6000 
+Bitte registriere dich mit: register <deinName>
+register Alice
+Registrierung erfolgreich als 'Alice'
+Broadcast von Marvin: Sind Kartoffeln eine richtige Mahlzeit?
+clients
+Bekannte Clients:
+- Bob
+- Alice
+- Marvin
+
+Terminal 3 (Client 2):
+PS C:\Users\Honou\Desktop\UDP-TCP-Chat-2025S\Java - netcat TCP\src> javac oxoo2a/Main.java          
+PS C:\Users\Honou\Desktop\UDP-TCP-Chat-2025S\Java - netcat TCP\src> java oxoo2a.Main 127.0.0.1 6000 
+Bitte registriere dich mit: register <deinName>
+register Bob
+Registrierung erfolgreich als 'Bob'
+Broadcast von Marvin: Sind Kartoffeln eine richtige Mahlzeit?
+
+Terminal 4 (Client 3):
+PS C:\Users\Honou\Desktop\UDP-TCP-Chat-2025S\Java - netcat TCP\src> javac oxoo2a/Main.java          
+PS C:\Users\Honou\Desktop\UDP-TCP-Chat-2025S\Java - netcat TCP\src> java oxoo2a.Main 127.0.0.1 6000 
+Bitte registriere dich mit: register <deinName>
+register Marvin
+Registrierung erfolgreich als 'Marvin'
+sendall Sind Kartoffeln eine richtige Mahlzeit?
+Auto-Antwort an Marvin: Absolut! Kartoffeln sind lecker UND nahrhaft!
+
+
+Funktioniert alles wie zu sehen ist.
