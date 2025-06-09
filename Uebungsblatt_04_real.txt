@@ -1,0 +1,170 @@
+Rechnernetze Übungsblatt 4
+Peter Kessler
+1593158
+
+###################################################################################################
+
+			### Aufgabe 1: Protokoll-Header ###
+
+Der Capture ist im Anhang zu finden. Ich habe als beliebiges IPv4 das Paket 669 ausgewählt. Folgende
+Header-Eigenschaften sind aus dem Paket zu entnehmen:
+
+
+    "0100 .... = Version: 4" <-Version 4
+    ".... 0101 = Header Length: 20 bytes (5)" <- Length
+    "Differentiated Services Field: 0x00 (DSCP: CS0, ECN: Not-ECT)" <-tos
+    "Total Length: 40" <-Total Lenght
+    "Identification: 0xac04 (44036)" <-Identification
+    "010. .... = Flags: 0x2, Don't fragment" <-Flags
+    "..0 0000 0000 0000 = Fragment Offset: 0" <-Fragment offset
+    "Time to Live: 110" <-TTL
+    "Protocol: TCP (6)" <-Protocol
+    "Header Checksum: 0x596d [validation disabled]" <-Header Checksum
+    "[Header checksum status: Unverified]"
+    "Source Address: 136.199.189.116" <-Source Address
+    "Destination Address: 192.168.0.122" <-Destination Address
+    "[Stream index: 33]"
+
+
+Als UDP Paket habe ich das Paket 245 ausgewählt. Dazu die (Nach VL) Header-Eigenschaften:
+
+    "Source Port: 443" <-Source Port
+    "Destination Port: 58500" <-Destination Port
+    "Length: 32" <-UDP length
+    "Checksum: 0xb552 [unverified]" <-UDP checksum
+    "[Checksum Status: Unverified]"
+    "[Stream index: 8]"
+    "[Stream Packet Number: 7]"
+    "[Timestamps]"
+    "UDP payload (24 bytes)"
+
+
+Als TCP Paket habe ich das Paket 244 ausgewählt. Dazu die (Nach VL) Header-Eigenschaften:
+
+    "Source Port: 443" <-Source Port
+    "Destination Port: 37972" <-Destination Port
+    "[Stream index: 6]"
+    "[Stream Packet Number: 15]"
+    "[Conversation completeness: Incomplete, DATA (15)]"
+    "[TCP Segment Len: 0]"
+    "Sequence Number: 265    (relative sequence number)" <-Sequence Number
+    "Sequence Number (raw): 2786270515"
+    "[Next Sequence Number: 265    (relative sequence number)]"
+    "Acknowledgment Number: 2179    (relative ack number)"<-Ackniowledgement Number
+    "Acknowledgment number (raw): 1501789003"
+    "0101 .... = Header Length: 20 bytes (5)" <-Header Length
+    "Flags: 0x010 (ACK)" <-Flags
+    "Window: 545"
+    "[Calculated window size: 69760]" <-Window Size
+    "[Window size scaling factor: 128]"
+    "Checksum: 0x3d48 [unverified]" <-TCP Checksum
+    "[Checksum Status: Unverified]"
+    "Urgent Pointer: 0" <-Urgent Pointer
+    "[Timestamps]"
+    "[SEQ/ACK analysis]"
+
+###################################################################################################
+
+			### Aufgabe 2: CIDR ###
+
+-103.161.122.83 ist eine IPv4-Adresse in Dezimalschreibweise (4 Oktette à 8 Bit)
+-/18 bedeutet, dass die ersten 18 Bits zur Subnetzmaske gehören ->bestimmt die Größe des Netzwerks
+
+Subnetzmaske: ersten 18 Bits auf 1 setzen, verbleibende 14 auf 0, d.h.
+11111111.11111111.11000000.00000000
+Umwandeln in Dezimal liefert:
+255.255.192.0
+
+Da man für die Broadcastadresse die Netzwerkadresse benötigt, wird diese zuerst berechnet:
+IP-Adresse in Binär: 01100111.10100001.01111010.01010011
+Subnetzmaske:	     11111111.11111111.11000000.00000000
+Bitweise UND:	     01100111.10100001.01000000.00000000
+In Dezimal: 	     103.161.64.0 ->Netzwerkaddresse 
+
+Broadcastadresse: Die Hostbits (die letzten 32-18=14 bits) auf 1 setzen, d.h.
+Netzwerkadresse + 2^14 = 103.161.64.0 + 16383 = 103.161.127.255 ->Broadcastadresse
+
+
+103.161.122.83/18 und 103.161.122.83/18 liegen nicht im selben Netz, denn:
+Berechnung der Netzwerkadresse von 103.161.122.83/18 liefert (analog zu oben)
+IP-Adresse in Binär: 01100111.10100001.11000001.01010011
+Subnetzmaske:	     11111111.11111111.11000000.00000000
+Bitweise UND:	     01100111.10100001.11000000.00000000
+In Dezimal: 	     103.161.192.0 ->Netzwerkaddresse 
+
+103.161.192.0 != 103.161.64.0
+
+
+
+###################################################################################################
+
+			### Aufgabe 3: Kommunikation zwischen Implementationen ###
+
+Da ich zum Einen nur einen PC besitze und daher nur über diesen lokal kommunizieren kann und zum 
+Anderen niemanden gefunden habe, der Zeit hatte, mit mir das Programm über mehrere PC's auszuprobieren, 
+konnte ich die Aufgabe daher leider nicht vollständig lösen. Stattdessen habe ich einfach 
+überlegt, welche Probleme theoretisch auftreten könnten und wie man diese beseitigen kann:
+
+UDP:
+
+1. Problem: Unterschiedliche Protokollformate, z.B.JSON vs Text
+Lösung: Gemeinsames Nachrichtenformat definieren, oder einfach in beiden Fällen das selbe Programm nutzen
+
+2. Problem: Client sendet an falsches Zielport
+Lösung: Portnummern abstimmen oder konfigurierbar machen
+
+3. Problem: Firewall-Probleme
+Lösung: Firewall freigeben
+
+4. Problem: Paketreihenfolge vertauscht
+Lösung: Nachrichten mit Sequenznummern versehen
+
+5. Problem: Paketverlust
+
+TCP:
+
+1. Problem: Unterschiedlicher Verbindungsaufbau
+Lösung: KLare Rollenverteilung Server vs Client
+
+2. Problem: Unterschiedliche Kodierung oder Nachrichtentrennung -> Empfänger kann nicht wissen, wo
+	    Nachricht endet
+Lösung: Trenner verwenden oder feste Länge kennzeichnen
+
+3. Problem: Blockierende Kommunikation, Deadlocks
+Lösung: Threads verwenden, um Deadlocks zu vermeiden
+
+4. Problem: Verschiedene Zeichencodierungen
+Lösung: Einheitliche Zeichencodierungen vereinbaren, z.B. UFT-8
+
+
+###################################################################################################
+
+			### Aufgabe 4: Programmierung ###
+
+TCP:
+
+-Server und Clients anmelden sowie Nachrichten verschicken geht genau so wie in der letzten Datei.
+-Mit dem Befehl "broadcast <Nachricht>" verschickt man als Client nun eine Nachricht an alle anderen
+-Der Befehl "List" gibt "[System] Registered clients: <Client1>, <Client2>,...," zurück, also die 
+	Liste mit allen angemeldeten Clients
+-Außerdem habe ich einige vordefinierte Nachrichten erstellt, auf welche man, wenn man diese sendet,
+	automatisch eine Antwort bekommt. Um zu erfahren, wie diese Fragen lauten, kann man als Client
+	den Befehl "list fragen" in die Konsole eingeben
+
+
+UDP (analog zu TCP):
+
+-Clients initialisieren und untereinander registrieren sowie Nachrichten senden bleibt gleich
+-Befehl "send_all <Nachricht>" sendet Nachricht an alle (vgl. TCP: "broadcast")
+-Befehl "list" gibt Liste aller beim Client registerierte andere Clients
+-Befehl "peers" soll in der Theorie die Liste der bekannten Clients eines anderen Client abfragen. Hier 
+	gibt es jedoch noch Probleme im Programm, die ich nicht fixen konnte.
+-Befehl "list fragen" gibt Liste aller Fragen mit automatischer Antwort aus.
+
+
+
+
+
+
+
+   
