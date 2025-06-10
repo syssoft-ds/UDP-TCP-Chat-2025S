@@ -45,6 +45,30 @@ def receiveAndRelay(port):
                     broadcastClientList()
                     continue
 
+                if msg.startswith("Q "):
+                    parts = msg.split(maxsplit=1)
+                    if len(parts) < 2:
+                        s_sock.sendto(b"[Server] Invalid question format. Use: Q <question number>", addr)
+                        continue
+                    answer = ''
+                    question = parts[1]
+                    if question == '1':
+                        answer = 'JA'
+                    elif question == '2':
+                        answer = 'NEIN'
+                    else:
+                        answer = 'Unbekannte Frage'
+
+                    content = answer
+                    recipient = clients[addr]
+                    forwarded = f"[ANSWER TO QUESTION: ] {content}"
+                    if recipient in name_to_addr:
+                        dest_addr = name_to_addr[recipient]
+                        forwarded = f"[{recipient} → {recipient}] {content}"
+                        s_sock.sendto(forwarded.encode(), dest_addr)
+                    continue
+                    
+
                 # Client disconnects
                 if msg.lower() == 'stop':
                     if addr in clients:
