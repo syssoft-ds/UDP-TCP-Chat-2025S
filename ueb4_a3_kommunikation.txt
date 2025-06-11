@@ -1,0 +1,104 @@
+Aufgabe 3: Kommunikation zwischen Implementationen 
+
+Für diese Aufgabe habe ich sowohl meine eigene Implementierung des Chat-Programms als auch die Musterlösung lokal getestet, indem ich beide Programme parallel in separaten Fenstern ausgeführt habe.
+Zunächst die Ergebnisse des UDP-Chat-Programms:
+Zuerst traten Probleme bei der Registrierung auf. Meine Anwendung konnte die eingehenden Registrierungsanfragen der Musterlösung zunächst nicht erkennen. Nach einer kleinen Anpassung im Code funktionierte die Registrierung jedoch zuverlässig in beide Richtungen. Allerdings konnte ich trotz erfolgreicher Registrierung keine Nachrichten zwischen den beiden Programmen austauschen. Die Musterlösung erkannte zwar den Kontakt, reagierte jedoch nicht auf gesendete Nachrichten meiner Implementierung. Ich vermute, dass Unterschiede im Nachrichtenformat oder in der Nachrichtenverarbeitung der beiden Implementierungen zu Inkompatibilitäten führten.
+Ergebnisse des TCP-Chat-Programms:
+
+1.Test mit meinem eigenen Server
+Ein Client aus dem Mustercode konnte sich erfolgreich mit meinem TCP-Server verbinden. Allerdings wurde dieser vom Server nicht als registrierter Client erkannt, da meine Serverimplementierung ein eigenes Registrierungsformat verwendet. Folglich war eine Kommunikation zwischen meinen Clienten und dem externen Client nicht möglich.
+Dieses Problem lässt sich durch eine Anpassung des Registrierungsverfahrens beheben. Wenn sich alle Beteiligten auf ein einheitliches Nachrichtenformat einigen, kann eine korrekte Registrierung und damit auch ein Nachrichtenaustausch ermöglicht werden.
+
+Output:
+
+//Mein Server
+D:\Desktop\Studium\sose2025\ueb3_tcp\src>java Main -l 12345
+Benutzer 'Anna' hat die Verbindung getrennt.
+Benutzer 'Martin' hat die Verbindung getrennt.
+
+//Client aus der Musterimplementation
+D:\Desktop\Studium\sose2025\muster_tcp_chat_client\src>java TCP_Chat_Client 127.0.0.1 12345 Bob
+Bob is connected to Server at IP 127.0.0.1 on port 12345.
+Use "send <client name> <message>" to send a message to a client.
+Geben den Namen ein:
+Befehle: send <name> <message> | stop
+send Anna Hallo Anna!
+Message sent.
+Bob
+Unknown command.
+send Martin test
+Message sent.
+stop
+Unknown command.
+Unable to get message from Server. //Serverfenster wurde geschlossen
+
+//Client aus meiner Implementation
+D:\Desktop\Studium\sose2025\ueb3_tcp\src>java Main 127.0.0.1 12345
+Geben den Namen ein:
+Anna
+Befehle: send <name> <message> | stop
+send Bob Hallo!
+Benutzer 'Bob' wurde nicht gefunden.
+register Bob: Hallo Anna!
+send Bob Hallo!
+Benutzer 'Bob' wurde nicht gefunden.
+Martin: Hi Anna.
+send Martin Hi Martin
+stop
+
+//Client aus meiner Implementation
+D:\Desktop\Studium\sose2025\ueb3_tcp\src>java Main 127.0.0.1 12345
+Geben den Namen ein:
+Martin
+Befehle: send <name> <message> | stop
+send Anna Hi Anna.
+Anna: Hi Martin
+send Bob test
+Benutzer 'Bob' wurde nicht gefunden.
+register Bob: test
+stop
+
+2. Test mit Musterserver war erfolgreich. Die Verbindung mit dem Server konnte problemlos hergestellt werden, die Clients wurden korrekt registriert und konnten untereinander Nachrichten austauschen. Meine Client-Implementierung war somit vollständig kompatibel mit dem Musterserver.
+
+Output:
+
+//Muster Server
+D:\Desktop\Studium\sose2025\muster_tcp_chat_client\src>java TCP_Chat_Server
+Server started on IP 192.168.56.1 on Port 1444.
+Use "quit" to exit program.
+Anna registered.
+Martin registered.
+Bob registered.
+
+//Client aus meiner Implementation
+D:\Desktop\Studium\sose2025\ueb3_tcp\src>java Main 192.168.56.1 1444
+register Martin
+send Anna hallo
+Message from Anna: hi
+send Bob huhu
+Message from Bob: test
+send Anna test
+send Bob test
+
+//Client aus meiner Implementation
+D:\Desktop\Studium\sose2025\ueb3_tcp\src>java Main 192.168.56.1 1444
+register Anna
+Message from Martin: hallo
+send Martin hi
+Message from Bob: hehe
+send Bob test
+Message from Martin: test
+send Bob test
+
+//Client aus der Musterimplementation
+D:\Desktop\Studium\sose2025\muster_tcp_chat_client\src>java TCP_Chat_Client 127.0.0.1 1444 Bob
+Bob is connected to Server at IP 127.0.0.1 on port 1444.
+Use "send <client name> <message>" to send a message to a client.
+send Anna hehe
+Message sent.
+Message from Martin: huhu
+Message from Anna: test
+send Martin test
+Message sent.
+Message from Martin: test
+Message from Anna: test
