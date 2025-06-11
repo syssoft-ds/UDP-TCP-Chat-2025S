@@ -3,6 +3,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalTime;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -11,6 +12,8 @@ public class UDP_Chat {
     private static int port;
     private static String name;
     private static final Map<String, ClientInfo> clients = new HashMap<>();
+    private static final Map<String, String> commonQuestions = new HashMap<>();
+
 
     private record ClientInfo(String ip, int port) { }
 
@@ -41,6 +44,7 @@ public class UDP_Chat {
 
     public static void main(String[] args) {
 
+        loadCommonQuestions();
         // Handling arguments, checking validity
         if (args.length != 2) {
             fatal("Arguments: \"<port number> <client name>\"");
@@ -73,6 +77,10 @@ public class UDP_Chat {
                     } else {
                         System.err.println("Unknown client \"" + receiver + "\".");
                     }
+                }
+                // (e) Auf vordefinierte Fragen antworten
+                else if (commonQuestions.containsKey(input)) {
+                    System.out.println(commonQuestions.get(input));
                 } else {
                     System.err.println("Unknown command.");
                 }
@@ -132,6 +140,24 @@ public class UDP_Chat {
             sendLines(friend, friends_port, message);
         } catch (UnknownHostException e) {
             System.err.println("Unable to find client \"" + friend + "\".");
+        }
+    }
+
+    // (a) Sende Nachricht an alle bekannten Clients
+    private static void messageAllClients(String message) {
+
+        for (var client : clients.entrySet()) {
+            sendLines(client.getKey(), client.getValue().port(), message);
+        }
+    }
+    // (e) Vordefinierte Fragen hinzufügen
+    private static void loadCommonQuestions() {
+        try {
+            commonQuestions.put("Was ist deine IP-Addresse?", InetAddress.getLocalHost().getHostAddress());
+            commonQuestions.put("Sind Kartoffeln eine richtige Mahlzeit?", "Ungekocht nicht. Zubereitet schon.");
+            commonQuestions.put("Wie viel Uhr haben wir?", String.valueOf(LocalTime.now()));
+        } catch (UnknownHostException e) {
+            throw new RuntimeException(e);
         }
     }
 }

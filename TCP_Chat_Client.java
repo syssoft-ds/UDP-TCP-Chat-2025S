@@ -23,6 +23,14 @@ public class TCP_Chat_Client {
         return UDP_Chat.isPort(port);
     }
 
+    // (b) Anfrage, Nachricht an alle bekannten Clients zu schicken
+    private static void messageAllClients(String message, PrintWriter out) {
+
+        out.println("broadcast" + message);
+        System.out.println("Broadcast request has been delivered.");
+
+    }
+
     public static void main(String[] args) {
 
         // Handling arguments, checking validity
