@@ -10,9 +10,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class Main {
 
-    private static String myName = "NA";
-
-    // Map von Name zu ClientHandler, um Nachrichten weiterzuleiten
     private static final Map<String, ClientHandler> clients = new ConcurrentHashMap<>();
 
     public static void main(String[] args) throws IOException {
@@ -48,7 +45,7 @@ public class Main {
     }
 
     private static class ClientHandler implements Runnable {
-        private Socket socket;
+        private final Socket socket;
         private String clientName = null;
         private BufferedReader in;
         private PrintWriter out;
@@ -64,10 +61,9 @@ public class Main {
 
                 out.println("Bitte registriere dich mit: register <dein_name>");
 
-                // Registrierung
                 while (true) {
                     String line = in.readLine();
-                    if (line == null) return;  // Verbindung beendet
+                    if (line == null) return;
                     line = line.trim();
 
                     if (line.startsWith("register ")) {
@@ -80,7 +76,7 @@ public class Main {
                             clientName = requestedName;
                             clients.put(clientName, this);
                             out.println("Registrierung erfolgreich als " + clientName);
-                            broadcast(clientName + " ist dem Chat beigetreten.", this);
+                            broadcast("[Server]: " + clientName + " ist dem Chat beigetreten.", this);
                             break;
                         }
                     } else {
@@ -88,14 +84,12 @@ public class Main {
                     }
                 }
 
-                // Nachrichten empfangen und weiterleiten
                 String msg;
                 while ((msg = in.readLine()) != null) {
                     msg = msg.trim();
                     if (msg.equalsIgnoreCase("stop")) {
                         break;
                     } else if (msg.startsWith("send ")) {
-                        // Format: send <name> <nachricht>
                         String[] parts = msg.split(" ", 3);
                         if (parts.length < 3) {
                             out.println("Fehler: Verwendung send <name> <nachricht>");
@@ -110,6 +104,17 @@ public class Main {
                         } else {
                             out.println("Empfänger " + targetName + " nicht gefunden.");
                         }
+
+                    } else if (msg.startsWith("broadcast ")) {
+                        String message = msg.substring(10).trim();
+                        broadcast("[" + clientName + "]: " + message, this);
+                    } else if (msg.equalsIgnoreCase("list")) {
+                        out.println("Bekannte Clients:");
+                        for (String name : clients.keySet()) {
+                            out.println("- " + name);
+                        }
+                    } else if (isKnownQuestion(msg)) {
+                        out.println(answerFor(msg));
                     } else {
                         out.println("Unbekannter Befehl.");
                     }
@@ -120,7 +125,7 @@ public class Main {
             } finally {
                 if (clientName != null) {
                     clients.remove(clientName);
-                    broadcast(clientName + " hat den Chat verlassen.", this);
+                    broadcast("[Server]: " + clientName + " hat den Chat verlassen.", this);
                 }
                 try {
                     socket.close();
@@ -131,8 +136,25 @@ public class Main {
         private void broadcast(String message, ClientHandler except) {
             for (ClientHandler c : clients.values()) {
                 if (c != except) {
-                    c.out.println("[Server]: " + message);
+                    c.out.println(message);
                 }
+            }
+        }
+
+        private boolean isKnownQuestion(String msg) {
+            return msg.equalsIgnoreCase("Was ist deine MAC-Adresse?") ||
+                    msg.equalsIgnoreCase("Sind Kartoffeln eine richtige Mahlzeit?");
+        }
+
+        private String answerFor(String question) {
+            String lower = question.trim().toLowerCase();
+            switch (question) {
+                case "was ist deine mac-adresse?":
+                    return "Meine MAC-Adresse ist geheim!";
+                case "sind kartoffeln eine richtige mahlzeit?":
+                    return "Aber natürlich, besonders mit Quark!";
+                default:
+                    return "Keine Antwort verfügbar.";
             }
         }
     }
@@ -144,7 +166,6 @@ public class Main {
         PrintWriter serverOut = new PrintWriter(socket.getOutputStream(), true);
         BufferedReader userIn = new BufferedReader(new InputStreamReader(System.in));
 
-        // Thread zum Lesen von Nachrichten vom Server
         Thread listener = new Thread(() -> {
             try {
                 String line;
@@ -157,7 +178,6 @@ public class Main {
         });
         listener.start();
 
-        // Haupt-Eingabeschleife
         String input;
         while ((input = userIn.readLine()) != null) {
             serverOut.println(input);
