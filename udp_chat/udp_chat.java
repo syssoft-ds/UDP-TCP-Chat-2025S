@@ -374,7 +374,7 @@ public class udp_chat {
                     case "peers":   displayUsers();
                                     break;
 
-                    default: throw new MalformedInputException(tokens[0] + " unknown command. Typ <help> for a list of known commands.");
+                    default: throw new MalformedInputException(tokens[0] + " unknown command. Type <help> for a list of known commands.");
                 }
             } catch(MalformedInputException e){
                 System.out.println(e.getMessage());
