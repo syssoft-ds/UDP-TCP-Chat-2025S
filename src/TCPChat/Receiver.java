@@ -6,7 +6,10 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
+import java.util.NoSuchElementException;
 
 public class Receiver extends Thread {
 
@@ -32,24 +35,47 @@ public class Receiver extends Thread {
             String line;
             do {
                 line = r.readLine();
-                System.out.println(line);
+
                 if (!this.isServer) {
                     continue;
                 }
 
+                if (line == null || line.isEmpty()) {
+                    line = "Leere Nachricht";
+                }
+
+                System.out.println(line);
+
                 String[] words = line.trim().split(" ", 3);
 
-                if (words[0].equals("send")) {
-                    Socket dest = userList.entrySet().stream().filter(e -> e.getValue().equals(words[1])).findFirst().get().getKey();
-                    String source = userList.get(s);
-                    words[2] = "From " + source + ": " + words[2];
-                    sendMessage(dest, words[2]);
+                if (words[0].equals("send") && words.length >= 3) {
+
+                    try {
+                        Socket dest = userList.entrySet().stream()
+                                .filter(e -> e.getValue().equals(words[1]))
+                                .findFirst().get().getKey();
+                        String source = userList.get(s);
+
+                        if (words[2].equals("Was ist deine IP-Adresse?")) {
+                            sendMessage(s, dest.getInetAddress().getHostAddress());
+                        } else if (words[2].equals("Wie viel Uhr haben wir?")) {
+                            sendMessage(s, LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss")));
+                        } else if (words[2].equals("Welche Rechnernetze HA war das?")) {
+                            sendMessage(s,"4. HA, Aufgabe 4");
+                        } else {
+                            words[2] = "From " + source + ": " + words[2];
+                            sendMessage(dest, words[2]);
+                        }
+                    } catch (NoSuchElementException e) {
+                        sendMessage(s, "Benutzer nicht gefunden: " + words[1]);
+                    } catch (ArrayIndexOutOfBoundsException e) {
+                        sendMessage(s, "Benutzer nicht gefunden: " + words[1]);
+                    }
                 }
-                if (words[0].equals("show")) {
+                if (words[0].equals("list")) {
                     userList.forEach((k, v) -> {
                         try {
                             sendMessage(s, v);
-                            System.out.println("test");
                         } catch (IOException e) {
                             throw new RuntimeException(e);
                         }
@@ -62,14 +88,27 @@ public class Receiver extends Thread {
                         userList.put(s, words[1]);
                     }
                 }
+                if(words[0].equals("broadcast")) {
+                    String source = userList.get(s);
+                    String message = "Boradcast from " + source + ": " + words[1];
+                    userList.forEach((k, v) -> {
+                        try {
+                            sendMessage(k, message);
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
+                }
 
 
             } while (!line.equalsIgnoreCase("stop"));
+            userList.remove(s);
             s.close();
+            this.interrupt();
         }
         catch (IOException e) {
             System.out.println("There was an IOException while receiving data ...");
-            System.exit(-1);
+            // System.exit(-1);
         }
     }
 
