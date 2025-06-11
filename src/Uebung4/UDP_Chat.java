@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.*;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
@@ -54,7 +55,7 @@ public class UDP_Chat {
         }
         name = args[1];
 
-        System.out.println(name + " (Port: " + port + ") is here, looking around.\nUse \"register <ip address> <port number>\" to contact another client.\nUse \"send <registered client name> <message>\" to message them.\nUse \"quit\" to exit program.");
+        System.out.println(name + " (Port: " + port + ") is here, looking around.\nUse \"register <ip address> <port number>\" to contact another client.\nUse \"send <registered client name> <message>\" to message them.\nUse \"sendall\" to message all known clients.\nUse \"ask <registered client name> <question>\" to ask someone a question.\nUse \"questions\" to see all available questions.\nUse \"quit\" to exit program.");
         // Start a new thread to listen for messages
         new Thread(() -> receiveLines(port)).start();
 
@@ -70,11 +71,27 @@ public class UDP_Chat {
                     ClientInfo receiverInfo = clients.get(receiver);
                     if (receiverInfo != null) {
                         String message = input.substring(input.indexOf(receiver) + receiver.length()).trim();
-                        sendLines(receiverInfo.ip, receiverInfo.port, message);
+                        sendLines(receiverInfo.ip, receiverInfo.port, message, (byte) 3);
                         System.out.println("Sent \"" + message + "\" to " + receiver + ".");
                     } else {
                         System.err.println("Unknown client \"" + receiver + "\".");
                     }
+                }else if (parts[0].equalsIgnoreCase("sendall")) {
+                    String message = input.substring(input.indexOf("sendall") + 7).trim();
+                    sendLinesAll(message);
+                    System.out.println("Sent \"" + message + "\" to " + " to all known clients.");
+                } else if (parts[0].equalsIgnoreCase("ask")) {
+                    String receiver = parts[1];
+                    ClientInfo receiverInfo = clients.get(receiver);
+                    if (receiverInfo != null) {
+                        String message = input.substring(input.indexOf(receiver) + receiver.length()).trim();
+                        sendLines(receiverInfo.ip, receiverInfo.port, message, (byte) 6);
+                        System.out.println("Sent \"" + message + "\" to " + receiver + ".");
+                    } else {
+                        System.err.println("Unknown client \"" + receiver + "\".");
+                    }
+                }else if (parts[0].equalsIgnoreCase("questions")) {
+                    System.out.println("Available questions: \n1. Sind Kartoffeln ein Gericht?\n2. Macht diese Aufgabe Spaß?\n3. Ist Rhababerkuchen lecker?\n4. Was ist deine MAC-Adresse?");
                 } else {
                     System.err.println("Unknown command.");
                 }
@@ -90,50 +107,196 @@ public class UDP_Chat {
     private static void receiveLines(int port) {
         try(DatagramSocket s = new DatagramSocket(port)) { // closes automatically
             byte[] buffer = new byte[packetSize];
-            String line;
+            String payload;
             do {
                 DatagramPacket p = new DatagramPacket(buffer, buffer.length);
                 s.receive(p);
-                line = new String(buffer, 0, p.getLength(), StandardCharsets.UTF_8);
-                if (line.startsWith("Hello, this is ")) { // Register phrases
-                    String[] parts = line.split(", ");
-                    // saving for the important data
-                    String name = parts[1].split(" ")[2];
-                    String ip = parts[2].split(" ")[4];
-                    String clientPortString = parts[3].split(" ")[4];
-                    if (isIP(ip) && isPort(clientPortString)) { // validating
-                        int clientPort = Integer.parseInt(clientPortString);
-                        clients.put(name, new ClientInfo(ip, clientPort));
+                ByteBuffer messageBuffer = ByteBuffer.wrap(p.getData(), 0, p.getLength());
+
+                // Nachrichtentyp (1 Byte)
+                byte type = messageBuffer.get();
+
+                // Länge der Nachricht (4 Bytes, Big Endian)
+                int length = messageBuffer.getInt();
+
+                // Payload (Rest der Nachricht)
+                byte[] payloadBytes = new byte[length];
+                messageBuffer.get(payloadBytes);
+                payload = new String(payloadBytes, StandardCharsets.UTF_8);
+
+                if(type == 3) { // Message type
+                    String[] parts = payload.split(",",2);
+                    if (parts.length == 2) {
+                        String sender = parts[0];
+                        String message = parts[1];
+                        System.out.println("Nachricht von " + sender + ": " + message);
                     } else {
-                        System.err.println("Cannot register \"" + name + "\" because of invalid information.");
+                        System.err.println("Invalid message format.");
                     }
+                } else if (type == 2) { // Registration type
+                    String[] parts = payload.split(",");
+                    if (parts.length == 3) {
+                        String name = parts[0];
+                        String ip = parts[1];
+                        String portString = parts[2];
+                        if (isIP(ip) && isPort(portString)) {
+                            int clientPort = Integer.parseInt(portString);
+                            clients.put(name, new ClientInfo(ip, clientPort));
+                            System.out.println("Registered client: " + name + " at " + ip + ":" + clientPort);
+                        } else {
+                            System.err.println("Invalid registration data for " + name);
+                        }
+                    } else {
+                        System.err.println("Invalid registration format.");
+                    }
+                } else if (type == 6) { // Question type
+                    String[] parts = payload.split(",");
+                    if (parts.length == 2) {
+                        String sender = parts[0];
+                        String question = parts[1];
+                        System.out.println("Question from " + sender + ": " + question);
+
+                        if( question.equalsIgnoreCase("Sind Kartoffeln ein Gericht?")) {
+                            ClientInfo receiverInfo = clients.get(sender);
+                            sendLines(receiverInfo.ip, receiverInfo.port, "Ja, Kartoffeln können als Beilage oder Hauptgericht serviert werden.", (byte) 3);
+                        } else if (question.equalsIgnoreCase("Macht diese Aufgabe Spaß?")) {
+                            ClientInfo receiverInfo = clients.get(sender);
+                            sendLines(receiverInfo.ip, receiverInfo.port, "Ja, es ist eine interessante Aufgabe!", (byte) 3);
+                        } else if (question.equalsIgnoreCase("Ist Rhababerkuchen lecker?")) {
+                            ClientInfo receiverInfo = clients.get(sender);
+                            sendLines(receiverInfo.ip, receiverInfo.port, "Ja, Rhababerkuchen ist sehr lecker!", (byte) 3);
+                        } else if (question.equalsIgnoreCase("Was ist deine MAC-Adresse?")) {
+                            try {
+                                ClientInfo receiverInfo = clients.get(sender);
+                                byte[] macBytes = NetworkInterface.getByInetAddress(InetAddress.getLocalHost()).getHardwareAddress();
+                                if (macBytes != null) {
+                                    StringBuilder macAddressBuilder = new StringBuilder();
+                                    for (int i = 0; i < macBytes.length; i++) {
+                                        macAddressBuilder.append(String.format("%02X", macBytes[i]));
+                                        if (i < macBytes.length - 1) {
+                                            macAddressBuilder.append(":");
+                                        }
+                                    }
+                                    String macAddress = macAddressBuilder.toString();
+                                    sendLines(receiverInfo.ip, receiverInfo.port, "Meine MAC-Adresse ist: " + macAddress, (byte) 3);
+                                } else {
+                                    System.err.println("MAC-Adresse konnte nicht abgerufen werden.");
+                                }
+                            } catch (SocketException | UnknownHostException e) {
+                                System.err.println("Fehler beim Abrufen der MAC-Adresse: " + e.getMessage());
+                            }
+                        } else {
+                            ClientInfo receiverInfo = clients.get(sender);
+                            sendLines(receiverInfo.ip, receiverInfo.port, "Diese Frage kann ich nicht beantworten.", (byte) 3);
+                        }
+                    } else {
+                        System.err.println("Invalid question format.");
+                    }
+                } else {
+                    System.err.println("Unknown message type: " + type);
                 }
-                System.out.println(line);
-            } while (!line.equalsIgnoreCase("quit"));
+
+            } while (!payload.equalsIgnoreCase("quit"));
         } catch (IOException e) {
             System.err.println("Unable to receive message on port \"" + port + "\".");
         }
     }
 
-    private static void sendLines(String friend, int friends_port, String message) {
-        try (DatagramSocket s = new DatagramSocket()) { // closes automatically
-            InetAddress ip = InetAddress.getByName(friend);
-            byte[] buffer = message.getBytes(StandardCharsets.UTF_8);
-            DatagramPacket p = new DatagramPacket(buffer, buffer.length, ip, friends_port);
-            s.send(p);
+    private static void sendLines(String friend, int friends_port, String message, byte Typ) {
+        try (DatagramSocket socket = new DatagramSocket()) {
+            // Nachrichtentyp (1 Byte)
+            byte typ = Typ;
+            // Payload erstellen: endpoint.name,endpoint.ip,endpoint.port
+            String payload = String.format("%s,%s", name, message);
+            byte[] payloadBytes = payload.getBytes(StandardCharsets.UTF_8);
+
+            // Länge der Nachricht (4 Bytes, big endian)
+            int messageLength =  1 + 4 + payloadBytes.length; // type + length + Payload
+            byte[] lengthBytes = ByteBuffer.allocate(4).putInt(payloadBytes.length).array();
+
+            // Nachricht zusammenstellen
+            ByteBuffer messageBuffer = ByteBuffer.allocate(messageLength);
+            messageBuffer.put(typ); // Typ
+            messageBuffer.put(lengthBytes); // Länge
+            messageBuffer.put(payloadBytes); // Payload
+
+            // Nachricht senden
+            InetAddress friendAddress = InetAddress.getByName(friend);
+            DatagramPacket packet = new DatagramPacket(messageBuffer.array(), messageBuffer.array().length, friendAddress, friends_port);
+            socket.send(packet);
+
             System.out.println("Message sent.");
         } catch (IOException e) {
             System.err.println("Unable to send message to \"" + friend + "\".");
         }
     }
 
-    private static void register(String friend, int friends_port) {
-        try {
-            String ip = InetAddress.getLocalHost().getHostAddress();
-            String message = String.format("Hello, this is %s, my IPv4 address is %s, my port number is %d, and I am thrilled to talk to you.", name, ip, UDP_Chat.port);
-            sendLines(friend, friends_port, message);
-        } catch (UnknownHostException e) {
-            System.err.println("Unable to find client \"" + friend + "\".");
+    private static void sendLinesAll(String message) {
+        for (Map.Entry<String, ClientInfo> entry : clients.entrySet()) {
+            String clientName = entry.getKey();
+            ClientInfo clientInfo = entry.getValue();
+
+            try (DatagramSocket socket = new DatagramSocket()) {
+                // Nachrichtentyp (1 Byte)
+                byte type = 3;
+                // Payload erstellen: endpoint.name,endpoint.ip,endpoint.port
+                String payload = String.format("%s,%s", name, message);
+                byte[] payloadBytes = payload.getBytes(StandardCharsets.UTF_8);
+
+                // Länge der Nachricht (4 Bytes, big endian)
+                int messageLength = 1 + 4 + payloadBytes.length; // Typ (1 Byte) + Länge (4 Bytes) + Payload
+                byte[] lengthBytes = ByteBuffer.allocate(4).putInt(payloadBytes.length).array();
+
+                // Nachricht zusammenstellen
+                ByteBuffer messageBuffer = ByteBuffer.allocate(messageLength);
+                messageBuffer.put(type); // Typ
+                messageBuffer.put(lengthBytes); // Länge
+                messageBuffer.put(payloadBytes); // Payload
+
+                // Nachricht senden
+                InetAddress friendAddress = InetAddress.getByName(clientInfo.ip);
+                DatagramPacket packet = new DatagramPacket(messageBuffer.array(), messageBuffer.array().length, friendAddress, clientInfo.port);
+                socket.send(packet);
+
+                System.out.println("Message sent.");
+            } catch (IOException e) {
+                System.err.println("Unable to send message to \"" + clientName + "\".");
+            }
         }
     }
+
+
+    private static void register(String friend, int friends_port) {
+        try (DatagramSocket socket = new DatagramSocket()) {
+            // Nachrichtentyp (1 Byte)
+            byte type = 2;
+
+            // Payload erstellen: endpoint.name,endpoint.ip,endpoint.port
+            String payload = String.format("%s,%s,%d", name, InetAddress.getLocalHost().getHostAddress(), port);
+            byte[] payloadBytes = payload.getBytes(StandardCharsets.UTF_8);
+
+            // Länge der Nachricht (4 Bytes, big endian)
+            int messageLength = 1 + 4 + payloadBytes.length; // Typ (1 Byte) + Länge (4 Bytes) + Payload
+            byte[] lengthBytes = ByteBuffer.allocate(4).putInt(payloadBytes.length).array();
+
+            // Nachricht zusammenstellen
+            ByteBuffer messageBuffer = ByteBuffer.allocate(messageLength);
+            messageBuffer.put(type); // Typ
+            messageBuffer.put(lengthBytes); // Länge
+            messageBuffer.put(payloadBytes); // Payload
+
+            // Nachricht senden
+            InetAddress friendAddress = InetAddress.getByName(friend);
+            DatagramPacket packet = new DatagramPacket(messageBuffer.array(), messageBuffer.array().length, friendAddress, friends_port);
+            socket.send(packet);
+
+            System.out.println("Registrierungsnachricht gesendet.");
+        } catch (IOException e) {
+            System.err.println("Fehler beim Senden der Registrierungsnachricht: " + e.getMessage());
+        }
+    }
+
+
+
+
 }
