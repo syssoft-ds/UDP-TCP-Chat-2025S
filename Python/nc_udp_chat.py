@@ -1,87 +1,103 @@
 import socket
 import sys
 import threading
-clients = {}  # name -> (ip, port)
 
-def receiveLines(port):
-    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s_sock:
-        s_sock.bind(('0.0.0.0', port))
-        print(f"[Server] Wartet auf Port {port}")
+known_clients = {}  # name -> (ip, port)
+local_name = ""
+local_port = 0
+
+def receive(port):
+    global known_clients
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+        sock.bind(("0.0.0.0", port))
         while True:
-            line, c_address = s_sock.recvfrom(4096)
-            line = line.decode().rstrip()
-            print(f"[Empfangen] {line} von {c_address}")
+            data, addr = sock.recvfrom(4096)
+            msg = data.decode().strip()
 
-            if line.lower() == 'stop':
-                print("[Server] Stop empfängt, beende.")
+            if msg.startswith("REGISTER:"):
+                # Format: REGISTER:<name>:<ip>:<port>
+                try:
+                    _, name, ip, port = msg.split(":")
+                    known_clients[name] = (ip, int(port))
+                    print(f"[System] Registrierung von '{name}' ({ip}:{port}) erhalten.")
+                except:
+                    print("[Fehler] Ungültige Registrierungsnachricht.")
+            elif msg.startswith("MSG:"):
+                    # Format: MSG:<name>:<message>
+                    try:
+                        _, sender, message = msg.split(":", 2)
+                        print(f"[{sender}] {message}")
+
+                        # Automatische Antworten auf bestimmte Fragen
+                        antworten = {
+                            "was ist deine mac-adresse?": "Meine MAC-Adresse ist 00:11:22:33:44:55",
+                            "sind kartoffeln eine richtige mahlzeit?": "Natürlich sind Kartoffeln eine richtige Mahlzeit!",
+                        }
+
+                        lower_msg = message.lower()
+                        if lower_msg in antworten:
+                            reply = f"MSG:{local_name}:{antworten[lower_msg]}"
+                            sock.sendto(reply.encode(), addr)
+
+                    except:
+                        print("[Fehler] Ungültige Nachrichtenstruktur.")
+            elif msg.lower() == "stop":
+                print("[System] Verbindung beendet.")
                 break
 
-            if line.startswith("register "):
-                name = line.split()[1].lower()
-                clients[name] = c_address
-                print(f"[Server] Registriert: {name} → {c_address}")
-                s_sock.sendto(f"[Server] Willkommen, {name}!".encode(), c_address)
-
-            elif line.startswith("send "):
-                parts = line.split(maxsplit=2)
-                if len(parts) < 3:
-                    s_sock.sendto("[Fehler] Ungültiger send-Befehl.".encode(), c_address)
-                    continue
-
-                target_name = parts[1].lower()
-                message = parts[2]
-
-                sender_name = None
-                for name, addr in clients.items():
-                    if addr == c_address:
-                        sender_name = name
-                        break
-
-                if not sender_name:
-                    s_sock.sendto("[Fehler] Bitte zuerst registrieren.".encode(), c_address)
-                    continue
-
-                if target_name in clients:
-                    target_address = clients[target_name]
-                    full_msg = f"{sender_name} sagt: {message}"
-                    s_sock.sendto(full_msg.encode(), target_address)
-                    print(clients[target_name])
-                    print(f"[Weitergeleitet] {sender_name} → {target_name}: {message}")
-                else:
-                    s_sock.sendto(f"[Fehler] Ziel {target_name} nicht registriert.".encode(), c_address)
-
-def listen_for_messages(sock):
-    while True:
-        try:
-            msg, addr = sock.recvfrom(4096)
-            print(f"\n[Nachricht von Server] {msg.decode()}\n> ", end="")
-        except:
-            break
-
-
-def sendLines(host, port):
-    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as c_sock:
-        # Start Empfangs-Thread
-        listener = threading.Thread(target=listen_for_messages, args=(c_sock,), daemon=True)
-        listener.start()
-
-        print("[Client] Eingabe starten. Zum Beenden: 'stop'")
+def send():
+    global known_clients, local_name, local_port
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
         for line in sys.stdin:
-            line = line.rstrip()
-            c_sock.sendto(line.encode(), (host, port))
-            if line.lower() == 'stop':
+            line = line.strip()
+            if line.startswith("register "):
+                # Format: register <name> <ip> <port>
+                try:
+                    _, name, ip, port = line.split()
+                    msg = f"REGISTER:{local_name}:{socket.gethostbyname(socket.gethostname())}:{local_port}"
+                    sock.sendto(msg.encode(), (ip, int(port)))
+                    known_clients[name] = (ip, int(port))
+                    print(f"[System] Registrierung an '{name}' gesendet.")
+                except:
+                    print("[Fehler] Ungültiger Registrierbefehl.")
+            elif line.startswith("sendall "):
+                message = line[len("sendall "):]
+                msg = f"MSG:{local_name}:{message}"
+                for name, (ip, port) in known_clients.items():
+                    sock.sendto(msg.encode(), (ip, port))
+                print("[System] Nachricht an alle bekannten Clients gesendet.")
+            elif line.startswith("send "):
+                # Format: send <name> <message>
+                try:
+                    _, target_name, message = line.split(" ", 2)
+                    if target_name in known_clients:
+                        ip, port = known_clients[target_name]
+                        msg = f"MSG:{local_name}:{message}"
+                        sock.sendto(msg.encode(), (ip, port))
+                    else:
+                        print(f"[Fehler] Empfänger '{target_name}' nicht bekannt.")
+                except:
+                    print("[Fehler] Ungültiger Sendebefehl.")
+            elif line.lower() == "stop":
                 break
+            else:
+                print("[Hinweis] Unbekannter Befehl.")
 
 def main():
-    if len(sys.argv) != 3:
-        name = sys.argv[0]
-        print(f"Usage: \"{name} -l <port>\" oder \"{name} <ip> <port>\"")
-        sys.exit()
-    port = int(sys.argv[2])
-    if sys.argv[1].lower() == '-l':
-        receiveLines(port)
-    else:
-        sendLines(sys.argv[1], port)
+    global local_name, local_port
+    if len(sys.argv) != 4:
+        print(f"Usage: {sys.argv[0]} <name> -l <port>")
+        sys.exit(1)
 
-if __name__ == '__main__':
+    local_name = sys.argv[1]
+    if sys.argv[2] != "-l":
+        print("Fehler: Zweites Argument muss -l sein.")
+        sys.exit(1)
+
+    local_port = int(sys.argv[3])
+
+    threading.Thread(target=receive, args=(local_port,), daemon=True).start()
+    send()
+
+if __name__ == "__main__":
     main()

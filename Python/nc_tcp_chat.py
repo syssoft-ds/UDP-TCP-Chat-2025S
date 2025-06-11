@@ -41,6 +41,18 @@ def serveClient(c_sock, c_address):
                         c_sock.sendall("Fehlerhaftes SEND-Format.\n".encode())
                         continue
                     target_name, message = parts[1], parts[2]
+
+                    # e) Vordefinierte Fragen beantworten
+                    antworten = {
+                        "was ist deine mac-adresse?": "Meine MAC-Adresse ist 00:11:22:33:44:55",
+                        "sind kartoffeln eine richtige mahlzeit?": "Natürlich sind Kartoffeln eine richtige Mahlzeit!",
+                    }
+
+                    if message.lower() in antworten:
+                        reply = antworten[message.lower()]
+                        c_sock.sendall(f"[AutoReply] {reply}\n".encode())
+                        continue
+
                     with lock:
                         target_sock = registered_clients.get(target_name)
                     if target_sock:
@@ -50,6 +62,23 @@ def serveClient(c_sock, c_address):
                             c_sock.sendall(f"Fehler beim Senden an {target_name}: {e}\n".encode())
                     else:
                         c_sock.sendall(f"Empfänger '{target_name}' nicht gefunden.\n".encode())
+                    continue
+
+                elif line.startswith("SENDALL:"):
+                    message = line.split("SENDALL:", 1)[1]
+                    with lock:
+                        for client_name, target_sock in registered_clients.items():
+                            if target_sock != c_sock:
+                                try:
+                                    target_sock.sendall(f"[{name}] {message}\n".encode())
+                                except:
+                                    continue
+                    continue
+
+                elif line.strip().upper() == "LIST":
+                    with lock:
+                        names = ", ".join(registered_clients.keys())
+                    c_sock.sendall(f"[System] Bekannte Clients: {names}\n".encode())
                     continue
 
                 elif line.lower() == 'stop':
