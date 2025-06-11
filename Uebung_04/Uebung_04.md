@@ -134,3 +134,9 @@ Netzwerkadresse von 103.161.193.83/18:
   in Binär folgt --> 103.161.192.0
 
   Wenn wir diese mit der Netzwerkadresse der anderen 103.161.64.0/18 vergleichen, fällt auf dass diese also nicht im selben Netz liegen.
+
+
+
+## Aufgabe 3: *Kommunikation zwischen Implementationen*
+
+  Beim Versuch der Kommunikation unser unterschiedlichen Implementierungen ist zunächst kein erfolgreicher Nachrichtenaustausch Zustande gekommen. Bei beiden Protokollen also TCP und UDP war gleichermaßen das Lesen bzw. Parsen der empfangen Nachricht das Problem, während der andere Kommilitone die Nachricht normal mit "send <targetName> <message>" versand, hatte ich zunächst anstatt send ein MSG angehangen und beim Empfangen auf eine Nachricht die mit MSG anfängt gewartet. Diese grundlegende Problematik war letztlich auch das Schlüsselelement für Aufgabe 4, dass man es allgemein kompatibel macht und sich auf eine einheitlich Syntax hier einigen müsste. Ein weiterer kleiner Aspekt war zusätzlich beim TCPChat, dass bei unseren jeweiligen Server auf eine bestimmte Nachricht gewartet wurde und wir eben durch unsere unterschiedlichen Implementierungen auch nicht die korrekten Nachrichten an die jeweiligen Server schickten und diese somit die Clients nicht registrierte. Lösung war hier eigentlich gleich, dass man sich auf eine festgelegte Nachricht oder so einigt, die der Server erwartet.
