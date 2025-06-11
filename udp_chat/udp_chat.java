@@ -6,6 +6,8 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 
 public class udp_chat {
@@ -62,6 +64,29 @@ public class udp_chat {
                 continue;
             }
         }
+
+        while(args.length == 1){
+            try{
+                if (nickname != null){
+                    System.out.println("\nPlease provide a Nickname (single word, alphanumerical characters).");
+                    nickname = input.readLine();
+                }
+
+                nickname = args[0];
+                if (nickname.contains(" "))
+                        throw new IOException("Your nickname may not contain whitespaces.");
+                    
+                    if (!nickname.matches("[a-zA-Z0-9]+"))
+                        throw new IOException("Your nickname may only contain alphanumerical characters.");
+
+                    break;
+            } catch (IOException e){
+                    System.out.println(nickname + " is not a valid nickname. Try again.");
+                    continue;
+            }
+        }
+
+
         // add checks when user already exists
         // refactor: username per chat not global to avoid doubles
 
@@ -128,6 +153,10 @@ public class udp_chat {
 
     }
 
+    /*******************
+     * Network Utility *
+     *******************/
+
     private static boolean freePort(int port){
 
         // This method checks whether a port is available
@@ -173,7 +202,7 @@ public class udp_chat {
 
                 // if host is known
 
-                receiveMessage(packet, buffer);
+                receiveMessage(packet, buffer, socket);
 
             }
         } while (!END_CHAT_FLAG);
@@ -181,6 +210,59 @@ public class udp_chat {
 
     }
 
+    private static void receiveMessage(DatagramPacket packet, byte[] buffer, DatagramSocket socket){
+
+        // This method displays a new message
+
+        try{
+
+            String input = new String(buffer,0,packet.getLength(),"UTF-8");
+            String user = registeredAddresses.get(packet.getAddress().getHostAddress());
+
+            String[] tokens = input.split("\\s+");
+
+            // extracting the message
+            if (tokens[0].toLowerCase().matches("send"))
+                input = input.replaceFirst(tokens[0] + " " + tokens[1], "").trim();
+            else
+                input = input.replaceFirst(tokens[0], "").trim();
+
+            // outputting the message
+            System.out.println(user +": " + input);
+
+            // setting the prefix for predefined answers
+            String prefix = "send " + user + " ";
+
+            // predefined answers
+
+            if(input.toLowerCase().startsWith("wie viel uhr haben wir?")){
+                ZonedDateTime zdt = ZonedDateTime.now();
+                String formatted = zdt.format(DateTimeFormatter.RFC_1123_DATE_TIME);
+                sendMessage(user, prefix + formatted, socket, buffer);
+            }
+            if(input.toLowerCase().startsWith("was ist deine ip-adresse?")){
+                try{
+                    InetAddress localHost = InetAddress.getLocalHost();
+                    String localIp = localHost.getHostAddress();
+                    sendMessage(user, prefix + localIp, socket, buffer);
+                } catch (UnknownHostException e) {
+                    // pass
+                }
+            }
+            if(input.toLowerCase().startsWith("welche rechnernetze ha war das?")){
+                sendMessage(user, prefix + "4. HA, Aufgabe 4", socket, buffer);
+            }
+
+        } catch(Exception e){
+
+            // add proper exception handling
+        }
+
+    }
+
+    /*******************
+     * Utility methods *
+     *******************/
 
     private static void registerHost(DatagramPacket packet, byte[] buffer){
         
@@ -225,26 +307,6 @@ public class udp_chat {
 
     }
 
-
-    private static void receiveMessage(DatagramPacket packet, byte[] buffer){
-
-        // This method displays a new message
-
-        try{
-
-            String input = new String(buffer,0,packet.getLength(),"UTF-8");
-            String user = registeredAddresses.get(packet.getAddress().getHostAddress());
-
-            System.out.println(user +": " + input);
-
-        } catch(Exception e){
-
-            // add proper exception handling
-
-        }
-
-    }
-
     private static void sender(DatagramSocket socket){
 
         // This method reads and parses user input
@@ -267,8 +329,11 @@ public class udp_chat {
                                 sendMessage(tokens[1], line, socket, buffer); 
                                 break;
 
-                    case "stop":closeChat(); 
+                    case "exit":closeChat(); 
                                 break;
+
+                    case "send_all": broadcast(line, socket, buffer);
+                                     break;
 
                     case "register":if(tokens.length < 3)
                                         throw new MalformedInputException("REGISTER requires 2 arguments: <target ip> <target port>"); 
@@ -298,7 +363,7 @@ public class udp_chat {
                     case "whoami":  whoami(); 
                                     break;
 
-                    case "known":   displayUsers();
+                    case "peers":   displayUsers();
                                     break;
 
                     default: throw new MalformedInputException(tokens[0] + " unknown command. Typ <help> for a list of known commands.");
@@ -319,7 +384,8 @@ public class udp_chat {
             if(!registeredUsers.containsKey(nickname))
                 throw new NameException(nickname + " is not a known user.");
 
-            String message = line.replaceFirst("send " + nickname + " ", "");
+            //String message = line.replaceFirst("send " + nickname + " ", "");
+            String message = line;
             buffer = message.getBytes("UTF-8");
 
             InetSocketAddress otherHost = registeredUsers.get(nickname);
@@ -352,6 +418,8 @@ public class udp_chat {
                 if (br == null)
                     br = new BufferedReader(new InputStreamReader(System.in));
                 input = br.readLine();
+                if(again == true)
+                    again = false;
             }
             catch (Exception e) {
                 System.out.printf("Exception: %s\n",e.getMessage());
@@ -360,7 +428,20 @@ public class udp_chat {
         } while (again);
         return input;
     }
- 
+
+    
+    private static void broadcast(String message, DatagramSocket socket, byte[] buffer){
+        // This method broadcasts a message to all registered users
+
+        message.replaceFirst("broadcast", "");
+        message.trim();
+
+        for (HashMap.Entry<String, InetSocketAddress> entry : registeredUsers.entrySet()) {
+            sendMessage(entry.getKey(), message, socket, buffer);
+        }
+
+    }
+
     private static void registerWithHost(DatagramSocket socket, String targetAddress, int targetPort){
         
         // This method registers the local user with a new remote host
@@ -369,7 +450,7 @@ public class udp_chat {
             byte[] buffer = new byte[packetSize];
             InetAddress targetHost = InetAddress.getByName(targetAddress);
 
-            String line = "register " + nickname;
+            String line = "register " + nickname + " " + localHost.getHostAddress() + " " + localport;
             buffer = line.getBytes("UTF-8");
             DatagramPacket p = new DatagramPacket(buffer, buffer.length, targetHost, targetPort);
             socket.send(p);
@@ -417,7 +498,7 @@ public class udp_chat {
 
         // This method returns a list of available commands + syntax
 
-        System.out.println("\nLIST OF KNOWN COMMANDS:\n\nregister - SYNTAX: register <target ip> <target port>\n\nunregister - SYNTAX: unregister <nickname>\n\nsend - SYNTAX: send <nickname> <message>\n\nstop - SYNTAX: stop\n\nwhoami - SYNTAX: whoami\n\nwhois - SYNTAX: whois <nickname>\n\nknown - SYNTAX: known\n\nhelp - SYNTAX: help OR help <command>\n");
+        System.out.println("\nLIST OF KNOWN COMMANDS:\n\nregister - SYNTAX: register <target ip> <target port>\n\nunregister - SYNTAX: unregister <nickname>\n\nsend - SYNTAX: send <nickname> <message>\n\nexit - SYNTAX: exit\n\nwhoami - SYNTAX: whoami\n\nwhois - SYNTAX: whois <nickname>\n\nPeers - SYNTAX: Peers\n\nhelp - SYNTAX: help OR help <command>\n");
     }
 
     private static void help (String command){
@@ -426,12 +507,12 @@ public class udp_chat {
 
         switch(command.toLowerCase()){
             case "send": System.out.println("\nSYNTAX: send <username> <message>\n\nSends a message to a user. The message is only displayed to the user if you are registered with them and they are registered with you.\n"); break;
-            case "stop": System.out.println("\nSYNTAX: stop\n\n Closes the client.\n"); break;
+            case "Exit": System.out.println("\nSYNTAX: exit\n\n Closes the client.\n"); break;
             case "register": System.out.println("\nSYNTAX: register <target ip> <target port>\n\nSend your name to another user to register your client with them.\n"); break;
             case "unregister": System.out.println("\nSYNTAX: unregister <username>\n\nUnregisters a user with your client preventing their messages from being deisplayed to you.\n"); break;
             case "whoami": System.out.println("\nSYNTAX: whoami\n\nDisplays your username, ip and the port your client is running on.\n"); break;
             case "whois": System.out.println("\nSYNTAX: whois <username>\n\nDisplays the ip and the port the client of another is running on.\n"); break;
-            case "known": System.out.println("\nSYNTAX: known\n\nPrints a list of all users that registered with your client.\n"); break;
+            case "Peers": System.out.println("\nSYNTAX: peers\n\nPrints a list of all users that registered with your client.\n"); break;
             case "help": System.out.println("\nSYNTAX: help\n\nPrints a list of all available commands.\n\nSYNTAX: help <command>\n\nDisplays additional information for a given command.\n"); break;
             default: System.out.println(command + " is not a known command\n.");
         }
@@ -448,9 +529,9 @@ public class udp_chat {
         }
     }
 
-    /**************
-     * Exceptions *
-     **************/
+    /*********************
+     * Custom Exceptions *
+     *********************/
 
     static class NameException extends IOException{
 

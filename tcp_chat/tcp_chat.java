@@ -10,6 +10,8 @@ import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.net.ConnectException;
 import java.net.UnknownHostException;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 
 public class tcp_chat {
@@ -20,7 +22,6 @@ public class tcp_chat {
 
     private static int localport = -1;
     private static boolean END_CHAT_FLAG = false;
-
 
     private static void fatal ( String comment ) {
         System.out.println(comment);
@@ -76,22 +77,7 @@ public class tcp_chat {
         }
     }
 
-    private static boolean freePort(int port){
 
-        // This method checks whether a port is available
-
-        try(DatagramSocket socket = new DatagramSocket(port)){
-            socket.close();
-            return true;
-        } catch (IOException e){
-
-            // port is already in use
-
-            System.out.println(port + " is already in use.");
-
-            return false;
-        }
-    }
 
     // ************************************************************************
     // Server
@@ -118,53 +104,44 @@ public class tcp_chat {
             PrintWriter out = new PrintWriter(new OutputStreamWriter(clientConnection.getOutputStream()), true);
             String line;
             String username;
+            //setting username
 
-            // setting username
-
-            while(true){
-
-                out.println("Enter your username (alphanumerical) OR stop to close the connection.");
-
-                username = in.readLine().toLowerCase();
-
-                if(username.toLowerCase().equals("stop")){
-                    in.close();
-                    out.close();
-                    clientConnection.close();
-                    return;
-                }
-
-                if(username.matches("^[a-zA-Z0-9]+$"))
-                    if(!registeredUsers.containsKey(username)){
+            line = in.readLine();
+            System.out.println("received: " + line);
+            String[] tokens = line.split("\\s+");
+            if(tokens.length == 1){
+                username = tokens[0].toLowerCase();
+                    if(!registeredUsers.containsKey(username))
                         registeredUsers.put(username, out);
-                        break;
-                    }
                     else
-                        out.println("User already exists.");
-                else
-                    out.println("Invalid username.");
-            
+                        throw new MalformedInputException("User already exists.");
             }
-            
-            out.println("username " + username + " set.\n");
-            out.println(greeter());
+            else
+                throw new MalformedInputException("Please enter a valid username.");
 
-            // receiving messages
+            //out.println(greeter());
+
+            out.println("Registered with westwood studios.");
 
             do {
                 try{
 
                     line = in.readLine();
 
-                    String[] tokens = line.split("\\s+");
+                    tokens = line.split("\\s+");
 
                     switch(tokens[0].toLowerCase()){
-                        case "send":sendMessage(username, tokens[1].toLowerCase(), line); 
+                        case "send":line = line.replaceFirst("send " + tokens[1], "").trim();	
+                                    sendMessage(username, tokens[1].toLowerCase(), line); 
                                     break; //send message to user
                         case "stop":closeChat(); 
                                     break;
-                        case "known":   listUsers(username); 
+                        case "list":   listUsers(username); 
                                         break; // returns userlist 
+
+                        case "broadcast": broadcast(username, line);
+                                          break;
+
                         case "isknown": isKnown(tokens[1], username); 
                                         break;
                         case "help":if(tokens.length < 2){   //returns list of supported commands
@@ -196,6 +173,32 @@ public class tcp_chat {
         }
     }
 
+    /*******************
+     * Network Utility *
+     *******************/
+
+
+    public static boolean freePort(int port){
+
+        // This method checks whether a port is available
+
+        try(DatagramSocket socket = new DatagramSocket(port)){
+            socket.close();
+            return true;
+        } catch (IOException e){
+
+            // port is already in use
+
+            System.out.println(port + " is already in use.");
+
+            return false;
+        }
+    }
+
+    /******************
+     * Server Utility *
+     ******************/
+
     private static void sendMessage(String sender, String receiver, String input){
 
         // This method sends a message to a client
@@ -203,8 +206,8 @@ public class tcp_chat {
         try {
             if(!registeredUsers.containsKey(receiver))
                 throw new UnknownUserException(receiver + " is not a known user on this server.");
-            
-            String message = "from "+ sender + ": " + input.replaceFirst("send " + receiver + " ", "");
+
+            String message = "send " + sender + " " + input;
 
             registeredUsers.get(receiver).println(message);
 
@@ -218,7 +221,6 @@ public class tcp_chat {
     private static void listUsers(String sender){
 
         // This method returns a list of all currently connected users
-
 
         String userlist = "";
 
@@ -251,7 +253,7 @@ public class tcp_chat {
 
         // This method returns a list of all available commands and their syntax
 
-        registeredUsers.get(sender).println("\nLIST OF SUPPORTED COMMANDS:\n\nsend - SYNTAX: send <message>\nstop - SYNTAX: stop\nknown - SYNTAX: known\nisknown - SYNTAX: isknown <username>\nhelp - SYNTAX: help OR help <command>\n");
+        registeredUsers.get(sender).println("\nLIST OF SUPPORTED COMMANDS:\n\nsend - SYNTAX: send <message>\nstop - SYNTAX: stop\nlist - SYNTAX: list\nisknown - SYNTAX: isknown <username>\nhelp - SYNTAX: help OR help <command>\n");
     }
 
     private static void help(String command, String sender){
@@ -261,10 +263,28 @@ public class tcp_chat {
         switch(command.toLowerCase()){
             case "send": registeredUsers.get(sender).println("SYNTAX: send <username> <message>\nSends a message to a user, if the user is registered with the server."); break;
             case "stop": registeredUsers.get(sender).println("SYNTAX: stop\nCloses the client's connection to the server."); break;
-            case "known": registeredUsers.get(sender).println("SYNTAX: known\nReturns a list of users that registered with the server."); break;
+            case "list": registeredUsers.get(sender).println("SYNTAX: list\nReturns a list of users that registered with the server."); break;
             case "isknown": registeredUsers.get(sender).println("SYNTAX: isknown <username>\nReturns whether a username is registered with the server."); break;
             case "help": registeredUsers.get(sender).println("SYNTAX: help\nPrints a list of all available commands.\n\nSYNTAX: help <command>\nDisplays additional information for a given command."); break;
             default: registeredUsers.get(sender).println(command + " is not a known command on this server.");
+        }
+    }
+
+    private static String greeter(){
+
+        // This method prints a simple greeting message when a user connects to the server
+
+        return "Welcome to the server\n\nTo get a list of all available commands type: help\nTo get a list of all users currently connected to the server type: known\nTo send a message to another user type: send <nickname>\nTo disconnect from the server type: stop\n";
+    }
+
+    private static void broadcast(String username, String message){
+
+        // This method sends a message to all connected users
+
+        message = message.replaceFirst("broadcast", "").trim();
+
+        for (HashMap.Entry<String, PrintWriter> entry : registeredUsers.entrySet()) {
+            sendMessage(username, entry.getKey(), message);
         }
     }
 
@@ -276,16 +296,11 @@ public class tcp_chat {
         
     }
 
-    private static String greeter(){
-
-        // This method prints a simple greeting message when a user connects to the server
-
-        return "Welcome to the server\n\nTo get a list of all available commands type: help\nTo get a list of all users currently connected to the server type: known\nTo send a message to another user type: send <nickname>\nTo disconnect from the server type: stop\n";
-    }
-
     // ************************************************************************
     // Client
     // ************************************************************************
+
+    static String username;
 
     private static void Client () throws IOException {
 
@@ -301,12 +316,18 @@ public class tcp_chat {
             try{
                 System.out.println("Please enter the IP address of the server.");
                 serverHost = readString();
-                InetAddress serverAddress = InetAddress.getByName(serverHost);
+                InetAddress serverAddress = InetAddress.getByName(serverHost.trim());
                 System.out.println("Please enter the port the server is listening on.");
                 serverPort = Integer.parseInt(readString());
                 if (serverPort < 0 || 65335 < serverPort)
                     throw new NumberFormatException();
 
+                System.out.println("Enter your username (alphanumerical) OR stop to close the connection.");
+                username = readString();
+
+                if(username.toLowerCase().equals("stop"))
+                    return;
+                    
                 serverConnect = new Socket(serverAddress,serverPort);
             } catch(UnknownHostException e){
                 System.out.println(serverHost + " is not a valid IP address.");
@@ -319,6 +340,7 @@ public class tcp_chat {
                 continue;
             } catch(ConnectException e){
                 System.out.println("No server at " + serverHost + " on port "+ serverPort+".");
+                e.printStackTrace();
                 serverConnect = null;
                 continue;
             }
@@ -327,8 +349,10 @@ public class tcp_chat {
         BufferedReader in = new BufferedReader(new InputStreamReader(serverConnect.getInputStream()));
         PrintWriter out = new PrintWriter(serverConnect.getOutputStream(),true);
         
+        out.println(username);
+
         Thread t = new Thread(()->  {try{
-                                        receiver(in);
+                                        receiver(in, out);
                                     } catch(IOException e){
 
                                     }});
@@ -344,6 +368,55 @@ public class tcp_chat {
         serverConnect.close();
     }
 
+    private static void receiver ( BufferedReader in, PrintWriter out ) throws IOException  {
+
+        // This method listens for incoming packets
+
+        String input = null;
+
+        do {
+
+            input = in.readLine();
+            if (input != null)
+                System.out.println(input);
+            else
+                break;
+            
+
+            // predefined answers, working with broadcast
+
+            String[] tokens = input.split("\\s+");            
+            if (tokens.length > 2) {
+                input = input.replaceFirst(tokens[0] + " " + tokens[1], "").trim();
+                if(input.toLowerCase().startsWith("wie viel uhr haben wir?")){
+                    ZonedDateTime zdt = ZonedDateTime.now();
+                    String formatted = zdt.format(DateTimeFormatter.RFC_1123_DATE_TIME);
+                    out.println("send " + tokens[1] + " " + formatted);
+                    continue;
+                }
+                if (input.toLowerCase().startsWith("was ist deine ip-addresse?")){
+                    
+                    try{
+                        InetAddress localHost = InetAddress.getLocalHost();
+                        String localIp = localHost.getHostAddress();
+                        out.println("send " + tokens[1] + " " + localIp);
+                        continue;
+                    } catch (UnknownHostException e) {
+                        // pass
+                    }
+                }
+                if(input.toLowerCase().startsWith("welche rechnernetze ha war das?")){
+                    out.println("send " + tokens[1] + " 4. HA, Aufgabe 4");
+                }
+            }
+        } while (input != null);
+
+    }
+
+    /******************
+     * Client Utility *
+     ******************/
+
     private static String readString () {
 
         // This method reads user input
@@ -355,6 +428,8 @@ public class tcp_chat {
                 if (br == null)
                     br = new BufferedReader(new InputStreamReader(System.in));
                 input = br.readLine();
+                if (again == true)
+                    again = false;
             }
             catch (Exception e) {
                 System.out.printf("Exception: %s\n",e.getMessage());
@@ -364,21 +439,10 @@ public class tcp_chat {
         return input;
     }
 
-    private static void receiver ( BufferedReader in ) throws IOException  {
 
-        // This method listens for incoming packets
-
-        String input = null;
-
-        do {
-
-            input = in.readLine();
-            if (input != null)
-                System.out.println(input);
-
-        } while (input != null);
-
-    }
+    /*********************
+     * Custom Exceptions *
+     *********************/
 
     static class UnknownUserException extends IOException {
 
