@@ -1,0 +1,415 @@
+Übungsblatt 4 Rechnernetze Nils Böhnke
+
+Aufgabe1
+Folgendes IPv4-Paket untersuche ich:
+
+3c a6 2f b2 c3 33 c8 e2  65 e3 18 f4 08 00 45 00
+00 28 32 7a 40 00 80 06  00 00 c0 a8 b2 22 8c 52
+71 16 ce 77 01 bb a0 f3  76 b8 13 60 2b 0e 50 10
+00 fa 70 4e 00 00
+
+Der Bereich für IPv4 ist folgender: 45 00
+00 28 32 7a 40 00 80 06  00 00 c0 a8 b2 22 8c 52
+71 16
+
+
+Version: 4 -> 45
+
+Header Length: 20 Bytes (5) -> 45
+
+Differentiated Services Field: 0x00 -> 00
+
+Total Length: 40 -> 00 28
+
+Identification: 0x327a -> 32 7a
+
+Flags: 0x2 -> 40
+
+Fragment Offset: 0 -> 40 00
+
+Time to Live: 128 -> 80
+
+Protocol: TCP (6) -> 06
+
+Header Checksum: 0x0000 -> 00 00
+
+Source Address: ***.***.***.** -> c0 a8 b2 22 
+
+Destination Address: ***.***.***.** -> 8c 52 71 16
+
+
+
+
+Folgendes UDP-Paket untersuche ich:
+
+01 00 5e 00 00 FB fa a0  3d 77 5f b5 08 00 45 00
+00 49 19 03 00 00 ff 11  4e b1 c0 a8 b2 4b e0 00
+00 FB 14 e9 14 e9 00 35  5a 83 00 00 00 00 00 01
+00 00 00 00 00 00 10 5f  73 70 6f 74 69 66 79 2d
+63 6f 6e 6e 65 63 74 04  5f 74 63 70 05 6c 6f 63
+61 6c 00 00 0c 00 01
+
+
+Der Bereich für UDP ist folgender: 14 e9 00 35  5a 83
+
+Source Port: 5353 -> 14 e9
+
+Destination Port: 5353 -> 14 e9
+
+Length: 53 -> 00 35
+
+Checksum: 0x5a83 -> 5a 83
+
+Checksum Status -> 
+
+Stream Index: 0
+
+Stream Packet Number: 1
+
+Timestamps
+
+UDP payload (45 Bytes) -> 00 00 00 00 00 01
+00 00 00 00 00 00 10 5f  73 70 6f 74 69 66 79 2d
+63 6f 6e 6e 65 63 74 04  5f 74 63 70 05 6c 6f 63
+61 6c 00 00 0c 00 01
+
+
+
+
+Folgendes TCP-Paket untersuche ich:
+
+3c a6 2f b2 c3 33 c8 e2  65 e3 18 f4 08 00 45 00
+00 29 7e 7f 40 00 80 06  00 00 c0 a8 b2 22 12 f4
+12 26 ca 6d 01 bb 2e 7c  57 58 91 96 a5 3c 50 10
+00 fd 98 00 00 00 00
+
+Der Bereich für TCP ist folgender: ca 6d 01 bb 2e 7c  57 58 91 96 a5 3c 50 10
+00 fd 98 00 00 00
+
+Source Port: 51821 -> ca 6d
+
+Destination Port: 443 -> 01 bb
+
+Stream Index: 0
+
+Stream Packet Number: 1
+
+TCP Segment Len: 1
+
+Sequence Number: 1 -> 2e 7c 57 58
+
+Sequence Number (raw) -> 2e 7c 57 58
+
+Next Sequence Number: 2
+
+Acknowledgment Number: 1 -> 91 96 a5 3c
+
+Acknowledgment Number (raw): 1 -> 91 96 a5 3c
+
+Header length: 20 bytes (5) -> 50
+
+Flags: 0x010 -> 50 10
+
+Window: 253 -> 00 fd
+
+Calculated Window size: 253 -> 00 fd
+
+Window size scaling factor: -1 -> 00 fd
+
+Checksum: 0x9800 -> 98 00
+
+Checksum status
+
+Urgent Pointer: 0 -> 00 00
+
+Timestamps
+
+SEQ/ACK Analysis
+
+TCP payload: (1 Byte) -> 00
+
+TCP Segment data: (1 Byte) -> 00
+
+
+
+
+Aufgabe 2:
+geg.: 103.161.122.83/18
+
+IP-Adresse: 163.161.122.83 
+-> Adresse eines Gerätes im Netzwerk
+
+Präfix: Die ersten 18 Bits sind Netzwerkpräfix
+->Restliche 14 Bits zum Hostanteil
+
+
+
+Ip-Adresse in binär:
+103.161.122.83 -> 01100111.10100001.01111010.01010011
+
+
+
+
+Subnetzmaske
+/18 entspricht 18 gesetzten Einsen
+-> 11111111.11111111.11000000.00000000
+Dezimal:
+-> 255.255.192.0
+
+
+
+Netzwerkadresse
+UND-Verknüpfung aus 
+-> Ip-Adresse 103.161.122.83 ->  01100111.10100001.01111010.01010011
+-> Subnetzmaske 255.255.192.0 -> 11111111.11111111.11000000.00000000
+-> Ergibt                     -> 01100111.10100001.01000000.00000000 -> 103.161.64.0
+
+
+
+Broadcastadresse
+103.161.64.0 -> 01100111.10100001.01000000.00000000
+Netzwerkadresse + alle Hostbits auf 1
+-> 01100111.10100001.01111111.11111111 -> 103.161.127.255
+
+
+Vergleich 103.161.122.83/18 mit 103.161.193.83/18
+ 
+103.161.193.83 -> 01100111.10100001.11000001.01010011
+UND-Verknüpfen
+255.255.192.0  -> 11111111.11111111.11000000.00000000
+Ergibt         -> 01100111.10100001.11000000.00000000 -> 103.161.192.0
+
+
+Adresse 103.161.122.83/18 Netzwerkadresse 103.161.64.0
+Adresse 103.161.193.83/18 Netzwerkadresse 103.161.192.0
+
+Adressen liegen in unterschiedlichen Netzwerken
+
+
+
+Aufgabe 3:
+UDP-Programm:
+Ich habe mein Python Programm mit der Java Musterlösung kommunizieren lassen.
+Dabei musste das Python Programm abgeändert werden, damit die Kommunikation funktioniert.
+Das Python Programm muss die Java-Registrierungsnachricht erkennen, dafür muss im receive_loop() Anpassungen vorgenommen werden, damit Python erkennt, das die Nachricht von Java zur Registrierung dient.
+Die Änderungen sind im Python Code ersichtlich:
+elif msg.startswith("Hello, this is "):
+    try:
+        parts = msg.split(", ")
+        name = parts[1].split(" ")[2]
+        ip = parts[2].split(" ")[5]
+        port = int(parts[3].split(" ")[5])
+        if name != my_name:
+            known_clients[name] = (ip, port)
+            print(f"[System] {name} (Java-Client) registriert unter {ip}:{port}", flush=True)
+    except Exception as e:
+        print(f"[Fehler] Konnte Java-Registrierung nicht verarbeiten: {e}", flush=True)
+
+
+else:
+    print(f"[Nachricht] {msg}", flush=True)
+
+Es könnte noch die Befehle in der Kommandozeile einheitlich gestaltet werden, aber die Programme sagen an, was sie für Informationen in welcher Reihenfolge benötige.
+Der Code ist auch nochmal komplett im Ordner zu finden.
+
+TCP-Programm: 
+Ich habe Client und Server von meinem Python Programm genommen und einen Client vom der Java Musterlösung, es gab einen Fehler in der Kommunikation, welcher durch eine Änderung im Java Code behoben wurde. Es gab im Java Programm die Klasse UDP_chat, der Java-Compiler konnte UDP_Chat-isIP() nicht finden.
+Diese Abänderung hat das Problem gelöst:
+public static boolean isIP(String ip) {
+    return ip.matches("^\\d{1,3}(\\.\\d{1,3}){3}$");
+}
+
+public static boolean isPort(String port) {
+    try {
+        int p = Integer.parseInt(port);
+        return p > 0 && p <= 65535;
+    } catch (NumberFormatException e) {
+        return false;
+    }
+}
+
+Es könnte noch die Befehle in der Kommandozeile einheitlich gestaltet werden, aber die Programme sagen an, was sie für Informationen in welcher Reihenfolge benötige.
+Der Code ist auch nochmal komplett im Ordner zu finden.
+
+
+
+Aufgabe 4:
+Siehe Dateien im Ordner
+
+UDP:
+Terminal1: 
+$ python chat_nc_udp_uebera_a4.py Alice -l *****
+[System] Starte Alice auf Port 5001 ...
+> [System] Alice h▒rt auf UDP-Port *****
+register Mark ***.***.***.** ****
+[System] Mark lokal registriert unter ***.***.***.**:****
+[Empfangen] Von ('***.***.***.**', *****): send Mark Hallo Alle!
+[Nachricht von Mark]: Hallo Alle!
+send Mark Hallo Mark!
+[Info] Nachricht an Mark gesendet.
+> send Mark Was ist deine MAC-Adresse?
+[Info] Nachricht an Mark gesendet.
+>
+[Empfangen] Von ('***.***.***.**', *****): send Mark Meine MAC-Adresse ist geheim
+[Nachricht von Mark]: Meine MAC-Adresse ist geheim
+
+
+
+Terminal2:
+$  python chat_nc_udp_uebera_a4.py Mark -l ****
+[System] Starte Mark auf Port **** ...
+> [System] Mark h▒rt auf UDP-Port ****
+[System] Alice lokal registriert unter 192.168.178.20:5001
+[Info] Nachricht an alle bekannten Clients gesendet.
+>
+[Empfangen] Von ('***.***.***.**', *****): send Alice Hallo Mark!
+[Nachricht von Alice]: Hallo Mark!
+[Empfangen] Von ('***.***.***.**', *****): send Alice Was ist deine MAC-Adresse?
+[Nachricht von Alice]: Was ist deine MAC-Adresse?
+[System] Automatische Antwort an Alice gesendet.
+
+
+TCP:
+Termianl1 Server:
+$ python chat_nc_tcp_uebera_a4.py -l *****
+[Server] TCP-Server l▒uft auf Port ***** ...
+[Server] Alice registriert von ('***.*.*.*', *****)
+[Server] Bob registriert von ('***.*.*.*', *****)
+[Server] Mark registriert von ('***.*.*.*', *****)
+
+Terminal2 Client:
+$ python chat_nc_tcp_uebera_a4.py localhost *****
+> register Alice
+>
+[System] Willkommen Alice!
+> list
+>
+[System] Bekannte Clients: Alice, Bob, Mark
+> sendall Hallo Alle!
+>
+[System] Nachricht an alle gesendet.
+>  Was ist deine MAC-Adresse?
+>
+[Automatische Antwort] Meine MAC-Adresse ist geheim
+>
+
+
+Terminal3 Client:
+$ python chat_nc_tcp_uebera_a4.py localhost *****
+> register Bob
+>
+[System] Willkommen Bob!
+>
+[Nachricht von Alice an alle]: Hallo Alle!
+>
+[Nachricht von Alice an alle]: Alice: Was ist deine MAC-Adresse?
+>
+
+
+Terminal4 Client:
+$ python chat_nc_tcp_uebera_a4.py localhost *****
+> register Mark
+>
+[System] Willkommen Mark!
+>
+[Nachricht von Alice an alle]: Hallo Alle!
+>
+[Nachricht von Alice an alle]: Alice: Was ist deine MAC-Adresse?
+>
+
+
+
+Alternativ:
+UDP:
+Terminal1:
+$ python chat_nc_udp_uebera_a4_alternativ.py Alice ***.***.***.** ****
+[System] Starte Alice auf ***.***.***.**:**** ...
+>
+[Empfangen] Von ('***.***.***.**', ****): request_name
+[System] Antwort an ('***.***.***.**', ****): register Alice ***.***.***.** ****
+register ***.***.***.** ****
+[Info] Anfrage zur Namensregistrierung an ***.***.***.**:**** gesendet.
+
+[Empfangen] Von ('***.***.***.**', ****): register Bob ***.***.***.** ****
+[System] Bob registriert unter ***.***.***.**:****
+> peers
+[System] Registrierte Kontakte:
+  Bob -> ***.***.***.**:****
+> send_all Hallo Alle
+[Info] Nachricht an alle gesendet.
+> send Bob Hallo
+[Info] Nachricht an Bob gesendet.
+> send Bob Wie viel Uhr haben wir?
+[Info] Nachricht an Bob gesendet.
+>
+[Empfangen] Von ('***.***.***.**', ****): send Bob Aktuelle Systemzeit ist 15:15:46
+[Nachricht von Bob]: Aktuelle Systemzeit ist 15:15:46
+
+
+
+Terminal2: 
+python chat_nc_udp_uebera_a4_alternativ.py Bob ***.***.***.** ****
+[System] Starte Bob auf ***.***.***.**:**** ...
+> register ***.***.***.** ****
+[Info] Anfrage zur Namensregistrierung an ***.***.***.**:**** gesendet.
+
+[Empfangen] Von ('***.***.***.**', ****): register Alice ***.***.***.** ****
+[System] Alice registriert unter ***.***.***.**:****
+>
+[Empfangen] Von ('***.***.***.**', ****): request_name
+[System] Antwort an ('***.***.***.**', ****): register Bob ***.***.***.** ****
+
+[Empfangen] Von ('***.***.***.**', ****): send Alice Hallo Alle
+[Nachricht von Alice]: Hallo Alle
+
+[Empfangen] Von ('***.***.***.**', ****): send Alice Hallo
+[Nachricht von Alice]: Hallo
+
+[Empfangen] Von ('***.***.***.**', ****): send Alice Wie viel Uhr haben wir?
+[Nachricht von Alice]: Wie viel Uhr haben wir?
+[Automatisch an Alice gesendet]: Aktuelle Systemzeit ist 15:15:46
+
+
+
+TCP:
+Terminal1 Server:
+$ python chat_nc_tcp_uebera_a4_alternativ.py -l *****
+[Server] TCP-Server l▒uft auf Port 12345 ...
+[Server] Alice registriert von ('***.*.*.*', *****)
+[Server] Bob registriert von ('***.*.*.*', *****)
+
+Terminal2 Client: 
+$ python chat_nc_tcp_uebera_a4_alternativ.py localhost *****
+> register Alice
+>
+[System] Willkommen Alice!
+> send Bob Hallo Bob, wie geht's?
+>
+[System] Nachricht an Bob gesendet.
+>
+[Nachricht von Bob an alle]: Hallo an Alle!
+>
+
+
+
+
+Terminal3 Client:
+$ python chat_nc_tcp_uebera_a4_alternativ.py localhost ****
+> register Bob
+>
+[System] Willkommen Bob!
+>
+[Nachricht von Alice]: Hallo Bob, wie geht's?
+> broadcast Hallo an Alle!
+>
+[System] Nachricht an alle gesendet.
+> list
+>
+[System] Bekannte Clients: Alice, Bob
+> Wie viel Uhr haben wir?
+>
+[Automatische Antwort] Aktuelle Systemzeit ist 15:38:10
+> stop
+
+
+ 
