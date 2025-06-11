@@ -6,6 +6,7 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
+import java.net.SocketException;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
@@ -184,39 +185,46 @@ public class udp_chat {
         // This method listens for incoming packets
 
         byte[] buffer = new byte[packetSize];
-        do {
-            DatagramPacket packet = new DatagramPacket(buffer,buffer.length);
-            socket.receive(packet);
+        try{
+            do {
+                DatagramPacket packet = new DatagramPacket(buffer,buffer.length);
+                socket.receive(packet);
 
-            //check whether host is known
+                //check whether host is known
 
-            String lookup = packet.getAddress().getHostAddress();
-
-            if (registeredAddresses.get(lookup) == null)
+                String lookup = packet.getAddress().getHostAddress();
                 
-                // if host is not known
+                String input = new String(buffer,0,packet.getLength(),"UTF-8");
 
-                registerHost(packet, buffer);
+                String[] tokens = input.split("\\s+");
 
-            else{
+                if (registeredAddresses.get(lookup) == null && tokens[0].equalsIgnoreCase("register"))
+                    
+                    // if host is not known
 
-                // if host is known
+                    registerHost(packet, buffer);
 
-                receiveMessage(packet, buffer, socket);
+                else if (registeredAddresses.get(lookup) != null){
 
-            }
-        } while (!END_CHAT_FLAG);
-        System.out.println("Shutdown receiver.");
+                    // if host is known
 
+                    receiveMessage(input, buffer, socket, packet);
+
+                }
+            } while (!END_CHAT_FLAG);
+
+        } catch(SocketException e){
+            System.out.println("Socket closed, receiver shutting down.");
+        }
     }
 
-    private static void receiveMessage(DatagramPacket packet, byte[] buffer, DatagramSocket socket){
+    private static void receiveMessage(String input, byte[] buffer, DatagramSocket socket, DatagramPacket packet){
 
         // This method displays a new message
 
         try{
 
-            String input = new String(buffer,0,packet.getLength(),"UTF-8");
+            //String input = new String(buffer,0,packet.getLength(),"UTF-8");
             String user = registeredAddresses.get(packet.getAddress().getHostAddress());
 
             String[] tokens = input.split("\\s+");
@@ -480,13 +488,6 @@ public class udp_chat {
             System.out.println(nickname + " is not known.");
     }
 
-    private static void closeChat(){
-
-        // sets flag to close down the program
-
-        END_CHAT_FLAG = true;
-    }
-
     private static void greeter(){
 
         // This method displays a greeting message after initialisation
@@ -527,6 +528,16 @@ public class udp_chat {
             System.out.println(entry.getKey() + " " + entry.getValue().getAddress().getHostAddress() + " " + entry.getValue().getPort());
         System.out.println();
         }
+    }
+
+    private static void closeChat(){
+
+        // sets flag to close down the program
+
+        END_CHAT_FLAG = true;
+
+        if (socket != null)
+            socket.close();
     }
 
     /*********************
