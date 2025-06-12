@@ -1,0 +1,4 @@
+Mein Vorschlag wäre, eine gemeinsame Liste von Fragen, Antworten und Befehlen zu erstellen, auf die sich alle Implementierungen (Client und Server) 
+im Voraus einigen. Diese Liste könnte beispielsweise in Form einer Konfigurationsdatei oder eines gemeinsamen Protokolldokuments vorliegen. 
+So kann sichergestellt werden, dass bei der Kommunikation zwischen unterschiedlichen Implementierungen dieselben Fragen erkannt und 
+korrekt beantwortet bzw. verarbeitet werden.
