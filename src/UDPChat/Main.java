@@ -7,6 +7,8 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 
 public class Main {
@@ -41,7 +43,7 @@ public class Main {
                 s.receive(p);
                 line = new String(buffer,0,p.getLength(),"UTF-8");
                 String[] words = line.trim().split("\\s+", 2);
-                if(words[0].equals("sync")) {
+                if(words[0].equals("register")) {
                     User newUser = new User(words[1], p.getAddress(), p.getPort());
                     System.out.println(p.getAddress());
                     if (!userList.contains(newUser)) {
@@ -66,7 +68,20 @@ public class Main {
                     }
                     continue;
                 }
-                System.out.println(line);
+                if (userList.stream().noneMatch(u -> u.ip.equals(p.getAddress()))) {
+                    User newUser = new User(p.getAddress().getHostAddress(), p.getAddress(), p.getPort());
+                    userList.add(newUser);
+                }
+                if (line.equals("Was ist deine IP-Adresse?")) {
+                    sendMessage(s,InetAddress.getLocalHost().getHostAddress().getBytes("UTF-8"),p.getAddress(),p.getPort());
+                } else if (line.equals("Wie viel Uhr haben wir?")) {
+                    sendMessage(s, LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss")).getBytes("UTF-8"),p.getAddress(),p.getPort());
+                } else if (line.equals("Welche Rechnernetze HA war das?")) {
+                    sendMessage(s,"4. HA, Aufgabe 4".getBytes("UTF-8"),p.getAddress(),p.getPort());
+                } else {
+                    System.out.println(line);
+                }
+
             } while (!line.equalsIgnoreCase("stop"));
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -79,6 +94,7 @@ public class Main {
             byte[] buffer = new byte[packetSize];
             String line = readString();
             String[] words = line.trim().split("\\s+", 3);
+            String[] words2 = line.trim().split("\\s+", 2);
 
             if (words[0].equalsIgnoreCase("send")) {
                 try {
@@ -90,13 +106,23 @@ public class Main {
                     continue;
                 }
             }
+            if (words[0].equalsIgnoreCase("send_all")) {
+                userList.forEach(user -> {
+                    try {
+                        byte[] buffer2 = words2[1].getBytes("UTF-8");
+                        sendMessage(s,buffer2,user.ip,user.port);
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+            }
             if (words[0].equalsIgnoreCase("stop")) {
                 break;
             }
-            if (words[0].equalsIgnoreCase("show")) {
+            if (words[0].equalsIgnoreCase("peers")) {
                 userList.forEach(System.out::println);
             }
-            if (words[0].equalsIgnoreCase("sync")) {
+            if (words[0].equalsIgnoreCase("register")) {
                 InetAddress inet = InetAddress.getByName(InetAddress.getLocalHost().getHostAddress());
                 while (true) {
                     System.out.println("Bitte IP eines Chatpartners eingeben um einem Netzwerk beizutreten:");
@@ -112,7 +138,7 @@ public class Main {
                 System.out.println("Bitte Port eines Chatpartners eingeben:");
                 int connectPort = Integer.parseInt(readString());
 
-                String syncMessage = "sync " + user.name;
+                String syncMessage = "register " + user.name;
                 buffer = syncMessage.getBytes("UTF-8");
                 sendMessage(s,buffer, inet, connectPort);
             }
