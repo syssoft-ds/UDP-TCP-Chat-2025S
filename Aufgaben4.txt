@@ -1,0 +1,148 @@
+Aufgabe 1:
+
+IPv4 Packet: Packet 5 in udpcap.pcapng
+
+Internet Protocol Version 4, Src: 127.0.0.1, Dst: 127.0.0.1
+    0100 .... = Version: 4
+    .... 0101 = Header Length: 20 bytes (5)
+    Differentiated Services Field: 0x00 (DSCP: CS0, ECN: Not-ECT)
+        0000 00.. = Differentiated Services Codepoint: Default (0)
+        .... ..00 = Explicit Congestion Notification: Not ECN-Capable Transport (0)
+    Total Length: 41
+    Identification: 0xef72 (61298)
+    010. .... = Flags: 0x2, Don't fragment
+        0... .... = Reserved bit: Not set
+        .1.. .... = Don't fragment: Set
+        ..0. .... = More fragments: Not set
+    ...0 0000 0000 0000 = Fragment Offset: 0
+    Time to Live: 128
+    Protocol: TCP (6)
+    Header Checksum: 0x0000 [validation disabled]
+    [Header checksum status: Unverified]
+    Source Address: 127.0.0.1
+    Destination Address: 127.0.0.1
+    [Stream index: 0]
+
+
+UDP Packet: Packet 37 in udpcap.pcapng
+
+User Datagram Protocol, Src Port: 51121, Dst Port: 51121
+    Source Port: 51121
+    Destination Port: 51121
+    Length: 40
+    Checksum: 0x587d [unverified]
+    [Checksum Status: Unverified]
+    [Stream index: 0]
+    [Stream Packet Number: 1]
+    [Timestamps]
+        [Time since first frame: 0.000000000 seconds]
+        [Time since previous frame: 0.000000000 seconds]
+    UDP payload (32 bytes)
+
+UDP Packet: Packet 31 in udpcap.pcapng
+
+Transmission Control Protocol, Src Port: 50686, Dst Port: 50685, Seq: 10, Ack: 1, Len: 1
+    Source Port: 50686
+    Destination Port: 50685
+    [Stream index: 2]
+    [Stream Packet Number: 19]
+    [Conversation completeness: Incomplete (12)]
+        ..0. .... = RST: Absent
+        ...0 .... = FIN: Absent
+        .... 1... = Data: Present
+        .... .1.. = ACK: Present
+        .... ..0. = SYN-ACK: Absent
+        .... ...0 = SYN: Absent
+        [Completeness Flags: ··DA··]
+    [TCP Segment Len: 1]
+    Sequence Number: 10    (relative sequence number)
+    Sequence Number (raw): 800854728
+    [Next Sequence Number: 11    (relative sequence number)]
+    Acknowledgment Number: 1    (relative ack number)
+    Acknowledgment number (raw): 3215132705
+    0101 .... = Header Length: 20 bytes (5)
+    Flags: 0x018 (PSH, ACK)
+        000. .... .... = Reserved: Not set
+        ...0 .... .... = Accurate ECN: Not set
+        .... 0... .... = Congestion Window Reduced: Not set
+        .... .0.. .... = ECN-Echo: Not set
+        .... ..0. .... = Urgent: Not set
+        .... ...1 .... = Acknowledgment: Set
+        .... .... 1... = Push: Set
+        .... .... .0.. = Reset: Not set
+        .... .... ..0. = Syn: Not set
+        .... .... ...0 = Fin: Not set
+        [TCP Flags: ·······AP···]
+    Window: 65535
+    [Calculated window size: 65535]
+    [Window size scaling factor: -1 (unknown)]
+    Checksum: 0xce83 [unverified]
+    [Checksum Status: Unverified]
+    Urgent Pointer: 0
+    [Timestamps]
+        [Time since first frame in this TCP stream: 1.007384000 seconds]
+        [Time since previous frame in this TCP stream: 0.000013000 seconds]
+    [SEQ/ACK analysis]
+        [Bytes in flight: 1]
+        [Bytes sent since last PSH flag: 1]
+    TCP payload (1 byte)
+
+Aufgabe 2:
+
+103.161.122.83/18
+
+103.161: netid
+122.83: hostid
+/18: CIDR
+
+subnet mask: 255.255.192.0
+Broadcast Address: 103.161.127.255
+Network Address: 103.161.64.0
+
+nein liegen sie nicht da 
+103.161.193.83/18 
+außerhalb der ip range 
+103.161.64.1 - 103.161.127.254
+liegt.
+
+Aufgabe3:
+
+Aufgrund meiner Terminnahen Bearbeitung dieser Aufgaben konnte ich leider niemanden mehr finden, mit dem ich diese Aufgabe zusammen lösen könnte.
+Deshalb habe ich mir überlegt welche probleme hier auftreten könnten und wie diese potentiell gelöst werden könnten.
+
+Beide:
+1.  Unterschiedliche Protokolle/Befehlsformate: was bei mir "all <nachricht>" ist könnte bei anderen z.B. "Send ALL <nachricht>" sein. daraufhin sendet der server eine fehlermeldung an den client die dieser evtl 
+    auch nicht interpretieren kann wg unterschiedlichem format.
+
+    Lösung: einheitliches befehls-/nachrichtenformat zws. allen implementationen.
+
+2.  Host-exposure/portforwarding: abgesehen von dem fall dass beide hosts im selben netzwerk sind wird die kommunikation nicht möglich sein.
+
+    lösung: Host-exposure/portforwarding am router konfigurieren um sicherzugehen dass die beiden hosts auch miteinander kommunizieren können.
+
+
+3.  Firewalls: können zu problemen in der kommunikation führen.
+
+    Lösung: an beiden enden die einrichtung überpürüfen um sicherzugehen, dass die kommunikation funktioniert.
+
+4.  Unterschiedliche Fehlerkorrektur/Ausfallerkennung: normales verhalten in einer implementation könnte als ausfall/fehler in einer anderen erkannt werden.
+
+    Lösung: siehe 1.
+
+5.  nicht kommunizierter Client ausfall
+
+    Lösung: regelmäßiger "health-check" der Client-Liste vom server
+
+6.  Packetverlust
+
+    Lösung: keine wirklich endgültige lösung möglich. beste problemminderung wäre beide hosts in ein netzwerk zu bringen
+
+Aufgabe4:
+a)  1.  die server implementierungen würden eine komplette überarbeitung meines servers erfordern, da aktuell mein server keine eigene befehlseingabe hat (shutdown kommt vom client oder vom terminal selbst).
+    2.  broadcast ist sowohl für udp und tcp clients implementiert.
+b)  1.  siehe a)2.
+c)  1.  Liste wird bei jeder änderung an alle clients übertragen. daher ist aus sicht der clients davon auszugehen, dass die letzte übertragene client liste aktuell ist. (befehl würde nur bereits angegebene information wiederholen).
+    2.  siehe a)1.
+d)  1.  siehe c)1.
+e)  1.  vorhandene Fragen sind abgekürzt zu zahlen (format ist "Q <zahl der frage>"):   Frage 1: Sind Kartoffeln eine richtige Mahlzeit?
+                                                                                        Frage 2: Hat dieser PC genug speicherplazt?

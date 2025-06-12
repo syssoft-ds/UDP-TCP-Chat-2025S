@@ -33,6 +33,7 @@ def handle_message(name, msg):
                     pass
     elif command == 'all' and parts[1] == 'send' and len(parts) == 3:
         message = parts[2]
+        answer = ''
         with clients_lock:
             for cname, sock in clients.items():
                 if cname != name:
@@ -40,6 +41,22 @@ def handle_message(name, msg):
                         sock.sendall(f'FROM {name} (broadcast): {message}\n'.encode())
                     except:
                         pass
+    elif command == 'q' and len(parts) == 2:
+        question = parts[1]
+        if question == '1':
+            answer = 'JA'
+        elif question == '2':
+            answer = 'NEIN'
+        else:
+            answer = 'Unbekannte Frage'
+        target_name, message = name, answer
+        with clients_lock:
+            target = clients.get(target_name)
+            if target:
+                try:
+                    target.sendall(f'FROM SERVER: {message}\n'.encode())
+                except:
+                    pass
     elif msg.strip() == 'STOP SERVER':
         shutdown_flag.set()
 
