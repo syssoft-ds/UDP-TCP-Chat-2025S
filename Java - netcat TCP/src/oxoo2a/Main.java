@@ -58,7 +58,7 @@ public class Main {
                 in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                 out = new PrintWriter(socket.getOutputStream(), true);
 
-                // Registrieren
+                // Registrierung
                 out.println("Bitte registriere dich mit: register <deinName>");
                 String line;
                 while ((line = in.readLine()) != null) {
@@ -85,13 +85,14 @@ public class Main {
                     return;
                 }
 
-                // Nachrichtenverarbeitung
+                // Haupt-Kommunikation
                 while ((line = in.readLine()) != null) {
                     if (line.equalsIgnoreCase("stop")) {
                         out.println("Verbindung wird geschlossen.");
                         break;
                     }
 
+                    // send <Name> <Message>
                     if (line.startsWith("send ")) {
                         String[] parts = line.split(" ", 3);
                         if (parts.length < 3) {
@@ -106,16 +107,62 @@ public class Main {
                         } else {
                             recipientHandler.sendMessage("Nachricht von " + clientName + ": " + message);
                         }
+
+                        // Auto-Antworten
+                        if (isAutoQuestion(message)) {
+                            String reply = getAutoReply(message);
+                            this.sendMessage("Auto-Antwort an " + clientName + ": " + reply);
+                        }
+
+                        // sendall <Message>
+                    } else if (line.startsWith("sendall ")) {
+                        String message = line.substring(8);
+
+                        // Auto-Antwort an den Sender, falls es eine Frage ist
+                        if (isAutoQuestion(message)) {
+                            String reply = getAutoReply(message);
+                            this.sendMessage("Auto-Antwort an " + clientName + ": " + reply);
+                        }
+
+                        for (Map.Entry<String, ClientHandler> entry : clients.entrySet()) {
+                            if (!entry.getKey().equals(clientName)) { // nicht an sich selbst
+                                entry.getValue().sendMessage("Broadcast von " + clientName + ": " + message);
+                            }
+                        }
+                    }
+                    else if (line.equalsIgnoreCase("clients")) {
+                        out.println("Bekannte Clients:");
+                        for (String name : clients.keySet()) {
+                            out.println("- " + name);
+                        }
+
                     } else {
-                        out.println("Unbekannter Befehl. Benutze: send <Name> <Nachricht> oder stop");
+                        out.println("Unbekannter Befehl. Benutze: send <Name> <Nachricht>, sendall <Nachricht>, clients oder stop");
                     }
                 }
+
             } catch (IOException e) {
                 System.out.println("Fehler bei Client " + clientName + ": " + e.getMessage());
             } finally {
                 closeConnection();
             }
         }
+
+        private boolean isAutoQuestion(String msg) {
+            return msg.equalsIgnoreCase("Was ist deine MAC-Adresse?") ||
+                    msg.equalsIgnoreCase("Sind Kartoffeln eine richtige Mahlzeit?");
+        }
+
+        private String getAutoReply(String msg) {
+            if (msg.equalsIgnoreCase("Was ist deine MAC-Adresse?")) {
+                return "Meine MAC-Adresse ist 00:11:22:33:44:55";
+            }
+            if (msg.equalsIgnoreCase("Sind Kartoffeln eine richtige Mahlzeit?")) {
+                return "Absolut! Kartoffeln sind lecker UND nahrhaft!";
+            }
+            return "Ich weiß darauf leider keine Antwort.";
+        }
+
 
         private void sendMessage(String message) {
             out.println(message);

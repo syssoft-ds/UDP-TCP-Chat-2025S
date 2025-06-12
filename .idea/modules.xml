@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/Java - netcat TCP/Java - netcat TCP.iml" filepath="$PROJECT_DIR$/Java - netcat TCP/Java - netcat TCP.iml" />
+      <module fileurl="file://$PROJECT_DIR$/Java - netcat UDP/Java - netcat UDP.iml" filepath="$PROJECT_DIR$/Java - netcat UDP/Java - netcat UDP.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/UDP-TCP-Chat-2025S.iml" filepath="$PROJECT_DIR$/.idea/UDP-TCP-Chat-2025S.iml" />
+    </modules>
+  </component>
+</project>
