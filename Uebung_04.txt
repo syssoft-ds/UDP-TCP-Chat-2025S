@@ -1,0 +1,69 @@
+Aufgabe 1
+
+IPv4 Paket:
+Version: Version 4
+Header Length: 20 bytes (5)
+Type of Service: 0x00 (DSCP: CS0, ECN: Not-ECT)
+Total Length: 91
+Identication: 0x0e91
+f: 0x0 Don't fragment Not set
+Fragment offset: 0
+Time to live: 118
+protocol: TCP (6)
+Header checksum: 0X635 [validation disabled]
+Source: 34.120.208.123
+Destination: 192.168.188.58
+
+UDP-Paket:
+Source Port: 45806
+Destination Port: 53
+Length: 52 bytes
+Checksum 0x17a1
+
+TCP-Paket:
+Source Port: 56058
+Destination Port: 443
+Sequence Number: 40
+Acknowledgment Number: 40
+Header Length: 32 bytes
+Flags: 0x010 (ACK)
+Calculated Window Size: 475
+Checksum: 0xaa46
+Urgent Pointer: 0
+Options: (12 bytes), No-Operation
+
+Aufgabe 2
+
+103.161.122.83 ist eine IPv4 Adresse, die aus vier Acht-Bit-Blöcken besteht. /18 bedeutet, dass die ersten 18 Bits zur Netzwerkadresse, die letzten 14 Bits zum Hostanteil gehören. Um die Subnetzmaske zu berechnen setzen wir gemäß /18 die ersten 18 Bits auf 1, die letzten 14 Bits auf 0, also 
+11111111.11111111.11000000.00000000 = 255.255.192.0
+
+Um die Netzwerkadresse zu berechnen, müssen wie Die IP und die Subnetzmaske Bitweise mit UND verknüpfen, also: 
+
+IP:       01100111.10100001.01111010.01010011
+Subnetz:  11111111.11111111.11000000.00000000
+Netzwerk: 01100111.10100001.01000000.00000000 = 103.161.64.0
+
+Um die Broadcastadresse zu berechnen, setzen wir die letzten 14 Bits der Netzwerkadresse auf 1, also:
+
+01100111.10100001.01111111.11111111 = 103.161.127.255
+
+Um zu überprüfen, ob 103.161.122.83 im selben Netz wie 103.161.193.83/18 liegt, müssen wir von letzterer IP die Netzwerkadresse berechnen.
+
+IP:       01100111.10100001.11000001.01010011
+Subnetz:  11111111.11111111.11000000.00000000
+Netzwerk: 01100111.10100001.11000000.00000000 = 103.161.192.0 != 103.161.64.0,
+
+also liegen beide nicht im selben Netzwerk.
+
+Aufgabe 3
+
+Bei UDP habe ich als zweite Implementierung die Musterlösung genommen. Entsprechend musste ich bei meinem Code die Regsitrierungsnachricht so anpassen, dass der Client der Musterlösung sie als solche erkennt. Bei der Eingabe hat sich geändert, dass man nicht mehr den Namen des Clienten selbst angeben muss, sondern nur noch IP und Port wie bei der Musterlösung. Des weiteren musste mein Code dazu in der Lage sein, die vom anderen Client gesendeten Nchrichten interpretieren zu können.
+
+Bei TCP hatte ich keine Probleme damit, den Client der Musterlösung mit meiner Implemetierung des Servers zu verbinden und Nachrichten mit einer meiner Clients auszutauschen.
+
+Aufgabe 4
+
+Siehe Änderungen am Code. Da habe ich die neuen Funktionen implementiert. Sowohl bei UDP als auch bei TCP ändert sich die registrierung und das Versenden von Nachrichten nicht. Mit dem Befehl "broadcast <text>" kann man jetzt an alle bekannten Clients (UDP) oder an alle auf dem Server registrierten Clients (TCP) versenden. Die Standardfragen werden explizit und case-insensitive abgefangen und beantwortet. Ebenfalls kann sich ein Client eine Liste mit allen registrierten Nutzern des Servers ausgeben lassen.
+
+
+
