@@ -21,7 +21,7 @@ empfangen kann, die von Clients gesendet wird.
 
 # Aufgabe 2
 
-Das Java-UDP-Programm wurde zu einem Chatprogramm erweitert -> siehe UDP_Chat.java
+Das Java-UDP-Programm wurde zu einem Chatprogramm erweitert -> siehe UDP_Chatold.java
 Mit dem Programm-Argument `<Name des Clients> <Port>` wird der Client gestartet. 
 Mit dem Befehl `connect <ip> <port> (optional: <name>)` kann man sich bei einer anderen Instanz registrieren.
 Anschließend kann man mit `send <name> <message>` Nachrichten an andere Instanzen senden.
