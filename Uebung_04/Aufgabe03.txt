@@ -1,0 +1,13 @@
+Ich habe mein Programm auf meinem PC mit einer anderen Implementierung eines Kommilitonen kommunizieren lassen.
+
+Mein UDP-Programm konnte erfolgreich die Registrierungsanfrage des anderen Programms verarbeiten,
+jedoch war das andersherum nicht der Fall und das andere Programm gab eine Fehlermeldung aus,
+dass es in einem Thread zu einem Fehler gekommen ist.
+Daher war es nicht möglich, beide Programme miteinander kommunizieren zu lassen.
+
+Das Problem war darauf zurückzuführen, dass bei der Verarbeitung der Pakete anders vorgegangen wurde und
+das andere Programm nicht in der Lage war, auf die Attribute der dekodierten Nachricht korrekt zuzugreifen.
+Nachdem ich dies angepasst hatte, kommunizierten die Programme erfolgreich miteinander.
+
+Ähnliche Problem traten auch beim TCP-Programm auf, sodass auch hier die Vorgehensweise synchronisiert werden musste.
+Als dies geschafft war, konnten auch die beiden Programme erfolgreich miteinander kommunizieren.
